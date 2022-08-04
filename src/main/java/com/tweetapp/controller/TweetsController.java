@@ -27,6 +27,7 @@ public class TweetsController {
 
 	@Autowired
 	private ITweetService tweetService;
+	
 
 	/**
 	 * rest service to get all tweets for a particular username

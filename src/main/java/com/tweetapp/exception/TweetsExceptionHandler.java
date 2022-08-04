@@ -111,4 +111,19 @@ public class TweetsExceptionHandler {
 		
 		return new ResponseEntity<>(globalExceptionModel, HttpStatus.UNAUTHORIZED);
 	}
+	
+	/**
+	 * task-1
+	 * exception handler for NoUsersFoundException
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(NoUsersFoundException.class)
+	public ResponseEntity<TweetsExceptionHandlerModel> handleNoUsersFoundException(NoUsersFoundException e) {
+		globalExceptionModel.setErrorMessage(TweetConstants.NO_USERS_FOUND_MSG);
+		globalExceptionModel.setErrorDescription("");
+		globalExceptionModel.setErrorCreationDate(new Date());
+		
+		return new ResponseEntity<>(globalExceptionModel, HttpStatus.NOT_FOUND);
+	}
 }
