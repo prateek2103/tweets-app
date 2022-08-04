@@ -35,6 +35,7 @@ import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
+import com.tweetapp.exception.NoUsersFoundException;
 import com.tweetapp.model.LoginResponse;
 import com.tweetapp.repository.IUserRepository;
 import com.tweetapp.util.TestUtil;
@@ -58,7 +59,7 @@ class UserControllerTest {
 	private enum REQUEST_TYPE {
 		GET_VALID_REQUEST, GET_INVALID_REQUEST
 	}
-	
+
 	private ObjectMapper objectMapper = new ObjectMapper();
 
 	private static final String USER_REQUEST_JSON = "userRequest.json";
@@ -141,7 +142,7 @@ class UserControllerTest {
 				.andReturn().getResponse().getContentAsString();
 
 		// convert string response to json to get the token
-		
+
 		LoginResponse userData = objectMapper.readValue(response, LoginResponse.class);
 
 		// call the rest api
@@ -219,8 +220,8 @@ class UserControllerTest {
 	}
 
 	/**
-	 * task-1
-	 * method to test to retrieve all users
+	 * task-1 method to test to retrieve all users
+	 * 
 	 * @throws UnsupportedEncodingException
 	 * @throws Exception
 	 */
@@ -228,13 +229,50 @@ class UserControllerTest {
 	void test_getAllUsers() throws UnsupportedEncodingException, Exception {
 		String response = mockMvc.perform(get("/api/v1.0/tweets/users/all")).andExpect(status().isOk()).andReturn()
 				.getResponse().getContentAsString();
-		
-		//convert response to UserDoc list
+
+		// convert response to UserDoc list
 		UserDoc[] actualUsers = objectMapper.readValue(response, UserDoc[].class);
 		List<UserDoc> expectedUsers = userRepo.findAll();
-		
-		//assert
-		assertEquals(expectedUsers.size(),actualUsers.length);
+
+		// assert
+		assertEquals(expectedUsers.size(), actualUsers.length);
+	}
+
+	/**
+	 * method to test get users by username when users exists
+	 * 
+	 * @throws UnsupportedEncodingException
+	 * @throws Exception
+	 */
+	@Test
+	void test_getUsersByUsername_userExists() throws UnsupportedEncodingException, Exception {
+		String partialUsername = "us";
+
+		String response = mockMvc.perform(get("/api/v/1.0/tweets/user/search/" + partialUsername))
+				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+		// convert response to UserDoc list
+		UserDoc[] actualUsers = objectMapper.readValue(response, UserDoc[].class);
+		List<UserDoc> expectedUsers = userRepo.findByUsernameLike("*" + partialUsername + "*");
+
+		// assert
+		assertEquals(expectedUsers.size(), actualUsers.length);
+	}
+
+	/**
+	 * method to test get users by username when users don't exists
+	 * @throws UnsupportedEncodingException
+	 * @throws Exception
+	 */
+	@Test
+	void test_getUsersByUsername_usersNotExists() throws UnsupportedEncodingException, Exception {
+		String partialUsername = "testUserNotExist";
+
+		mockMvc.perform(get("/api/v/1.0/tweets/user/search/" + partialUsername))
+				.andExpect(status().isNotFound())
+				.andExpect(result->assertTrue(result.getResolvedException() instanceof NoUsersFoundException))
+				.andReturn();
+
 	}
 
 	@AfterEach

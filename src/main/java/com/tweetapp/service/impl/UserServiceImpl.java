@@ -149,7 +149,8 @@ public class UserServiceImpl implements IUserService {
 
 	/**
 	 * task-1 method to get all users from the database
-	 * @throws NoUsersFoundException 
+	 * 
+	 * @throws NoUsersFoundException
 	 */
 	@Override
 	public List<UserDoc> getAllUsers() throws NoUsersFoundException {
@@ -161,7 +162,23 @@ public class UserServiceImpl implements IUserService {
 			throw new NoUsersFoundException();
 
 		}
-		
+
+		return users;
+	}
+
+	/**
+	 * task-1 metod to get users by username
+	 */
+	@Override
+	public List<UserDoc> getUsersByUsername(String username) throws NoUsersFoundException {
+		String pattern = "*"+username+"*";
+		List<UserDoc> users = userRepository.findByUsernameLike(pattern);
+
+		// in case there are no users in the database
+		if (users.isEmpty()) {
+			throw new NoUsersFoundException();
+
+		}
 		return users;
 	}
 

@@ -101,6 +101,11 @@ public class UserController {
 		return new ResponseEntity<>(TweetConstants.UPDATE_PASS_MSG, HttpStatus.OK);
 	}
 
+	/**
+	 * rest api call to get all users
+	 * @return
+	 * @throws NoUsersFoundException
+	 */
 	@GetMapping("/api/v1.0/tweets/users/all")
 	public ResponseEntity<MappingJacksonValue> getAllUsers() throws NoUsersFoundException {
 
@@ -114,4 +119,25 @@ public class UserController {
 
 		return new ResponseEntity<>(usersMapping, HttpStatus.OK);
 	}
+	
+	
+	/**
+	 * rest api call to get users where username like..
+	 * @return
+	 * @throws NoUsersFoundException
+	 */
+	@GetMapping("/api/v/1.0/tweets/user/search/{username}")
+	public ResponseEntity<MappingJacksonValue> getUsersByUsername(@PathVariable("username") String username) throws NoUsersFoundException {
+
+		List<UserDoc> users = userService.getUsersByUsername(username);
+		
+		// filter out any other property other than firstname, lastname and username
+		SimpleBeanPropertyFilter userFilter = SimpleBeanPropertyFilter.filterOutAllExcept("username","firstName","lastName");
+		FilterProvider filters = new SimpleFilterProvider().addFilter("UserDocFilter",userFilter);
+		MappingJacksonValue usersMapping = new MappingJacksonValue(users);
+		usersMapping.setFilters(filters);
+
+		return new ResponseEntity<>(usersMapping, HttpStatus.OK);
+	}
+	
 }

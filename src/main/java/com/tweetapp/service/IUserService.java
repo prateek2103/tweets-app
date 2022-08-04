@@ -46,5 +46,14 @@ public interface IUserService extends UserDetailsService {
 	 * @throws NoUsersFoundException 
 	 */
 	public List<UserDoc> getAllUsers() throws NoUsersFoundException;
+	
+	/**
+	 * task-1
+	 * method to get users by username
+	 * @param username
+	 * @return
+	 * @throws NoUsersFoundException
+	 */
+	public List<UserDoc> getUsersByUsername(String username) throws NoUsersFoundException;
 
 }
