@@ -113,8 +113,8 @@ class AuthControllerTest {
 		mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON)
 				.content(getLoginRequest(REQUEST_TYPE.GET_INVALID_REQUEST))).andExpect(status().isBadRequest())
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
-				.andExpect(result -> assertTrue(
-						result.getResolvedException().getMessage().equals(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG)))
+				.andExpect(result -> assertEquals(
+						result.getResolvedException().getMessage(),TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG))
 				.andReturn();
 
 	}
@@ -205,7 +205,7 @@ class AuthControllerTest {
 				.content(getRegisterUserRequest(REQUEST_TYPE.GET_INVALID_REQUEST)))
 				.andExpect(status().isBadRequest())
 				.andExpect(result->assertTrue(result.getResolvedException() instanceof InvalidUserException))
-				.andExpect(result->assertTrue(result.getResolvedException().getMessage().equals(TweetConstants.INVALID_PHONE_NUM_MSG)))
+				.andExpect(result->assertEquals(result.getResolvedException().getMessage(),TweetConstants.INVALID_PHONE_NUM_MSG))
 				.andReturn();
 		
 		//check if the user is saved in the database
