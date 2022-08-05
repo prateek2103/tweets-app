@@ -1,6 +1,7 @@
 package com.tweetapp.service.impl;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
@@ -12,6 +13,7 @@ import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
+import com.tweetapp.exception.NoUsersFoundException;
 import com.tweetapp.model.AuthResponse;
 import com.tweetapp.model.UserToken;
 import com.tweetapp.repository.IUserRepository;
@@ -61,14 +63,14 @@ public class UserServiceImpl implements IUserService {
 		if (tweetUtil.comparePasswords(userDetails.getPassword(), user.getPassword())) {
 
 			log.info("password authentication successful");
-			
+
 			// set the values for the token
 			userToken.setUsername(user.getUsername());
 			userToken.setAuthToken(jwtUtil.generateToken(userDetails));
 			return userToken;
-			
+
 		} else {
-			
+
 			log.error("invalid login credentials");
 			throw new InvalidUserException(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG);
 		}
@@ -110,7 +112,7 @@ public class UserServiceImpl implements IUserService {
 		}
 
 	}
-	
+
 	/**
 	 * helper method to validate the jwt token
 	 * 
@@ -129,7 +131,7 @@ public class UserServiceImpl implements IUserService {
 		if (jwtUtil.validateToken(token1).equals(Boolean.TRUE)) {
 
 			log.info("authentication token is valid");
-			
+
 			// extract the user name
 			String username = jwtUtil.extractUsername(token1);
 
@@ -143,6 +145,41 @@ public class UserServiceImpl implements IUserService {
 		}
 
 		return authResponse;
+	}
+
+	/**
+	 * task-1 method to get all users from the database
+	 * 
+	 * @throws NoUsersFoundException
+	 */
+	@Override
+	public List<UserDoc> getAllUsers() throws NoUsersFoundException {
+
+		List<UserDoc> users = userRepository.findAll();
+
+		// in case there are no users in the database
+		if (users.isEmpty()) {
+			throw new NoUsersFoundException();
+
+		}
+
+		return users;
+	}
+
+	/**
+	 * task-1 metod to get users by username
+	 */
+	@Override
+	public List<UserDoc> getUsersByUsername(String username) throws NoUsersFoundException {
+		String pattern = "*"+username+"*";
+		List<UserDoc> users = userRepository.findByUsernameLike(pattern);
+
+		// in case there are no users in the database
+		if (users.isEmpty()) {
+			throw new NoUsersFoundException();
+
+		}
+		return users;
 	}
 
 }

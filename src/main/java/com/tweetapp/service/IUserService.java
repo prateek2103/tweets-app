@@ -1,10 +1,13 @@
 package com.tweetapp.service;
 
+import java.util.List;
+
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
+import com.tweetapp.exception.NoUsersFoundException;
 import com.tweetapp.model.UserToken;
 
 public interface IUserService extends UserDetailsService {
@@ -35,5 +38,22 @@ public interface IUserService extends UserDetailsService {
 	 * @throws InvalidTokenException
 	 */
 	public void forgetPasswordUser(String username, String password, String token) throws InvalidTokenException;
+
+	/**
+	 * task-1
+	 * method to get all users
+	 * @return
+	 * @throws NoUsersFoundException 
+	 */
+	public List<UserDoc> getAllUsers() throws NoUsersFoundException;
+	
+	/**
+	 * task-1
+	 * method to get users by username
+	 * @param username
+	 * @return
+	 * @throws NoUsersFoundException
+	 */
+	public List<UserDoc> getUsersByUsername(String username) throws NoUsersFoundException;
 
 }
