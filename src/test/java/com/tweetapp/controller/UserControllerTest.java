@@ -1,4 +1,4 @@
-package com.tweetapp.unit;
+package com.tweetapp.controller;
 
 import static com.tweetapp.constants.TweetConstants.BASE_PATH;
 import static org.hamcrest.CoreMatchers.is;
@@ -119,8 +119,8 @@ class UserControllerTest {
 		mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON)
 				.content(getLoginRequest(REQUEST_TYPE.GET_INVALID_REQUEST))).andExpect(status().isBadRequest())
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
-				.andExpect(result -> assertEquals(result.getResolvedException().getMessage(),
-						TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG))
+				.andExpect(result -> assertEquals(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG,
+						result.getResolvedException().getMessage()))
 				.andReturn();
 
 	}
@@ -210,8 +210,8 @@ class UserControllerTest {
 		mockMvc.perform(post("/register").contentType(MediaType.APPLICATION_JSON)
 				.content(getRegisterUserRequest(REQUEST_TYPE.GET_INVALID_REQUEST))).andExpect(status().isBadRequest())
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
-				.andExpect(result -> assertEquals(result.getResolvedException().getMessage(),
-						TweetConstants.INVALID_PHONE_NUM_MSG))
+				.andExpect(result -> assertEquals(TweetConstants.INVALID_PHONE_NUM_MSG,
+						result.getResolvedException().getMessage()))
 				.andReturn();
 
 		// check if the user is saved in the database
@@ -261,6 +261,7 @@ class UserControllerTest {
 
 	/**
 	 * method to test get users by username when users don't exists
+	 * 
 	 * @throws UnsupportedEncodingException
 	 * @throws Exception
 	 */
@@ -268,9 +269,8 @@ class UserControllerTest {
 	void test_getUsersByUsername_usersNotExists() throws UnsupportedEncodingException, Exception {
 		String partialUsername = "testUserNotExist";
 
-		mockMvc.perform(get("/api/v/1.0/tweets/user/search/" + partialUsername))
-				.andExpect(status().isNotFound())
-				.andExpect(result->assertTrue(result.getResolvedException() instanceof NoUsersFoundException))
+		mockMvc.perform(get("/api/v/1.0/tweets/user/search/" + partialUsername)).andExpect(status().isNotFound())
+				.andExpect(result -> assertTrue(result.getResolvedException() instanceof NoUsersFoundException))
 				.andReturn();
 
 	}

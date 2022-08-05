@@ -25,7 +25,7 @@ public class TweetConstants {
 	public static final String UNAUTHORIZED_USER_ACCESS_MSG = "invalid login credentials";
 	public static final String INVALID_TOKEN_MSG = "invalid token passed in the request";
 	public static final String INVALID_PASS_MSG = "paswword cannot be empty";
-	public static final String INVALID_PHONE_NUM_MSG = "the phone number cannot be more than 10 digits";
+	public static final String INVALID_PHONE_NUM_MSG = "the phone number should have 10 digits";
 	public static final String NO_USERS_FOUND_MSG = "no users found";
 	
 	//constants
