@@ -7,9 +7,12 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.tweetapp.document.Tweet;
+import com.tweetapp.document.TweetDoc;
+import com.tweetapp.exception.InvalidTokenException;
+import com.tweetapp.model.AuthResponse;
 import com.tweetapp.repository.ITweetRepository;
 import com.tweetapp.service.ITweetService;
+import com.tweetapp.util.TweetUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,16 +23,19 @@ public class TweetServiceImpl implements ITweetService {
 	@Autowired
 	private ITweetRepository tweetRepository;
 	
+	@Autowired
+	private TweetUtil tweetUtil;
+	
 	/**
 	 * method to retrieve all tweets by username
 	 */
 	@Override
-	public List<Tweet> getTweetsByUsername(String username) {
+	public List<TweetDoc> getTweetsByUsername(String username) {
 		
 		String handle = String.format("@%s", username);
 		log.info("retrieving tweets for the username");
 		
-		List<Tweet> tweets = tweetRepository.findByHandle(handle);
+		List<TweetDoc> tweets = tweetRepository.findByHandle(handle);
 		
 		if(tweets.isEmpty()) {
 			log.info("no tweets found for this user");
@@ -42,7 +48,7 @@ public class TweetServiceImpl implements ITweetService {
 	 * method to post a tweet for a particular username
 	 */
 	@Override
-	public void addTweetForUsername(String username, Tweet tweet) {
+	public void addTweetForUsername(String username, TweetDoc tweet) {
 		
 		tweet.setHandle(username);
 		tweet.setAvatarUrl("some url");
@@ -51,7 +57,7 @@ public class TweetServiceImpl implements ITweetService {
 		tweet.setMessage("new message");
 		tweet.setReply(false);
 		
-		Tweet reply = new Tweet();
+		TweetDoc reply = new TweetDoc();
 		reply.setMessage("reply message");
 		reply.setCreatedAt(new Date());
 		
@@ -60,6 +66,24 @@ public class TweetServiceImpl implements ITweetService {
 		tweet.setReplies(Arrays.asList(reply));
 		
 		tweetRepository.save(tweet);
+	}
+
+	/**
+	 * task-2
+	 * method to get all tweets
+	 * @throws InvalidTokenException 
+	 */
+	@Override
+	public List<TweetDoc> getAllTweets(String authToken) throws InvalidTokenException {
+		AuthResponse authResponse = tweetUtil.getValidity(authToken);
+		
+		if(authResponse.isValid()) {
+			return tweetRepository.findAll();
+		}
+		else {
+			throw new InvalidTokenException();
+		}
+		
 	}
 
 }

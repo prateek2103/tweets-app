@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-import com.tweetapp.document.Tweet;
+import com.tweetapp.document.TweetDoc;
 
 /**
  * repository to handle crud operations on tweet
@@ -13,12 +13,12 @@ import com.tweetapp.document.Tweet;
  *
  */
 @Repository
-public interface ITweetRepository extends MongoRepository<Tweet, String> {
+public interface ITweetRepository extends MongoRepository<TweetDoc, String> {
 	
 	/**
 	 * method to retrieve all tweets by a username aka handle
 	 * @param handle
 	 * @return
 	 */
-	public List<Tweet> findByHandle(String handle);
+	public List<TweetDoc> findByHandle(String handle);
 }

@@ -1,12 +1,17 @@
 package com.tweetapp.util;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
+import com.tweetapp.model.AuthResponse;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * utility class for tweetsApp
@@ -15,7 +20,11 @@ import com.tweetapp.exception.InvalidUserException;
  *
  */
 @Component
+@Slf4j
 public class TweetUtil {
+	
+	@Autowired
+	private JwtUtil jwtUtil;
 
 	//constants
 	private static final String MESSAGE_START = "tweetsApp.users index:";
@@ -92,4 +101,37 @@ public class TweetUtil {
 		return bCryptPasswordEncoder.matches(userPassword, dbPassword);
 	}
 
+	/**
+	 * helper method to validate the jwt token
+	 * 
+	 * @param token
+	 * @return
+	 * @throws InvalidTokenException
+	 */
+	public AuthResponse getValidity(String token) throws InvalidTokenException {
+
+		// removing the Bearer from the header
+		String token1 = getPureToken(token);
+
+		AuthResponse authResponse = new AuthResponse();
+
+		// if valid
+		if (jwtUtil.validateToken(token1).equals(Boolean.TRUE)) {
+
+			log.info("authentication token is valid");
+
+			// extract the user name
+			String username = jwtUtil.extractUsername(token1);
+
+			// set the values for the response
+			authResponse.setUsername(username);
+			authResponse.setValid(true);
+
+		} else {
+			log.error("authentication token is not valid");
+			authResponse.setValid(false);
+		}
+
+		return authResponse;
+	}
 }

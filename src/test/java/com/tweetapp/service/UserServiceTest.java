@@ -21,6 +21,7 @@ import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
+import com.tweetapp.model.AuthResponse;
 import com.tweetapp.model.UserToken;
 import com.tweetapp.repository.IUserRepository;
 import com.tweetapp.service.impl.UserServiceImpl;
@@ -109,9 +110,7 @@ class UserServiceTest {
 	void test_forgetPasswordUserCallsRepo() throws InvalidTokenException {
 
 		// when
-		when(tweetUtil.getPureToken(TEST_TOKEN)).thenReturn(TEST_TOKEN);
-		when(jwtUtil.validateToken(TEST_TOKEN)).thenReturn(true);
-		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
+		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER,true));
 		when(userRepo.findByUsername(TEST_USER)).thenReturn(testUser);
 		when(tweetUtil.encryptPassword(TEST_PASS)).thenReturn(TEST_PASS);
 		
@@ -126,8 +125,7 @@ class UserServiceTest {
 	void test_forgetPasswordUserThrowsException() throws InvalidTokenException {
 
 		// when
-		when(tweetUtil.getPureToken(TEST_TOKEN)).thenReturn(TEST_TOKEN);
-		when(jwtUtil.validateToken(TEST_TOKEN)).thenReturn(false);
+		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER,false));
 
 		// then
 		assertThrows(InvalidTokenException.class,
