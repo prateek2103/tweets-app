@@ -35,4 +35,13 @@ public interface ITweetService {
 	 * @throws InvalidTokenException 
 	 */
 	public List<TweetDoc> getAllTweets(String authToken) throws InvalidTokenException;
+	
+	/**
+	 * method to delete tweet by id
+	 * @param id
+	 * @param token
+	 * @throws InvalidTokenException
+	 * @throws NoTweetsFoundException 
+	 */
+	public void deleteTweetById(String id, String username, String token) throws InvalidTokenException, NoTweetsFoundException;
 }

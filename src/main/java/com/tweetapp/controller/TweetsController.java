@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.NoTweetsFoundException;
@@ -30,7 +31,7 @@ public class TweetsController {
 
 	@Autowired
 	private ITweetService tweetService;
-	
+
 	@Autowired
 	private TweetUtil tweetUtil;
 
@@ -40,15 +41,15 @@ public class TweetsController {
 	 * @param username
 	 * @return
 	 * @throws NoTweetsFoundException
-	 * @throws InvalidTokenException 
+	 * @throws InvalidTokenException
 	 */
 	@GetMapping("/api/v1.0/tweets/{username}")
-	public ResponseEntity<MappingJacksonValue> getTweetsByUsername(@RequestHeader("Authorization") String token, @PathVariable String username)
-			throws NoTweetsFoundException, InvalidTokenException {
+	public ResponseEntity<MappingJacksonValue> getTweetsByUsername(@RequestHeader("Authorization") String token,
+			@PathVariable String username) throws NoTweetsFoundException, InvalidTokenException {
 
 		List<TweetDoc> tweets = tweetService.getTweetsByUsername(token, username);
 
-		//filter out the unnecessary fields in the tweets list
+		// filter out the unnecessary fields in the tweets list
 		MappingJacksonValue tweetsMapping = tweetUtil.filterTweetData(tweets);
 
 		return ResponseEntity.status(HttpStatus.OK).body(tweetsMapping);
@@ -64,6 +65,7 @@ public class TweetsController {
 
 	/**
 	 * method to get all tweets
+	 * 
 	 * @param authToken
 	 * @return
 	 * @throws InvalidTokenException
@@ -73,9 +75,19 @@ public class TweetsController {
 			throws InvalidTokenException {
 		List<TweetDoc> tweets = tweetService.getAllTweets(authToken);
 
-		//filter out the unnecessary fields in the tweets list
+		// filter out the unnecessary fields in the tweets list
 		MappingJacksonValue tweetsMapping = tweetUtil.filterTweetData(tweets);
 
 		return ResponseEntity.status(HttpStatus.OK).body(tweetsMapping);
+	}
+
+	@GetMapping("/api/v1.0/tweets/{username}/delete/{id}")
+	public ResponseEntity<String> deleteTweetById(@PathVariable("id") String id,
+			@PathVariable("username") String username, @RequestHeader("Authorization") String authToken)
+			throws InvalidTokenException, NoTweetsFoundException {
+
+		tweetService.deleteTweetById(id, username, authToken);
+
+		return ResponseEntity.status(HttpStatus.OK).body(TweetConstants.SUCCESS_DEL_MSG);
 	}
 }

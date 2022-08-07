@@ -4,11 +4,14 @@ import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.model.TweetsExceptionHandlerModel;
@@ -21,13 +24,22 @@ import com.tweetapp.util.TweetUtil;
  *
  */
 @ControllerAdvice
-public class TweetsExceptionHandler {
+public class TweetsExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@Autowired
 	private TweetsExceptionHandlerModel globalExceptionModel;
 
 	@Autowired
 	private TweetUtil tweetUtil;
+
+	@Override
+	protected ResponseEntity<Object> handleServletRequestBindingException(ServletRequestBindingException ex,
+			HttpHeaders headers, HttpStatus status, WebRequest request) {
+		
+		globalExceptionModel.setErrorMessage(ex.getMessage());
+		globalExceptionModel.setErrorCreationDate(new Date());
+		return new ResponseEntity<>(globalExceptionModel, HttpStatus.BAD_REQUEST);
+	}
 
 	/**
 	 * exception handler for NoTweetsFoundException.class
@@ -55,37 +67,26 @@ public class TweetsExceptionHandler {
 
 	/**
 	 * Exception handler for duplicate field exception
+	 * 
 	 * @param e
 	 * @return
 	 */
 	@ExceptionHandler(DuplicateKeyException.class)
 	public ResponseEntity<TweetsExceptionHandlerModel> handleDuplicateException(DuplicateKeyException e) {
 
-		String errMessage = String.format(TweetConstants.DUPE_KEY_MSG, tweetUtil.extractDupeFieldFromErrMsg(e.getMessage()));
+		String errMessage = String.format(TweetConstants.DUPE_KEY_MSG,
+				tweetUtil.extractDupeFieldFromErrMsg(e.getMessage()));
 		globalExceptionModel.setErrorMessage(errMessage);
 		globalExceptionModel.setErrorDescription("");
 		globalExceptionModel.setErrorCreationDate(new Date());
-		
+
 		return new ResponseEntity<>(globalExceptionModel, HttpStatus.BAD_REQUEST);
-		
+
 	}
-	
-	/**
-	 * exception handler for HttpMessageNotReadableException
-	 * @param e
-	 * @return
-	 */
-	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ResponseEntity<TweetsExceptionHandlerModel> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
-		globalExceptionModel.setErrorMessage(TweetConstants.JSON_PARSE_ERR_MSG);
-		globalExceptionModel.setErrorDescription("");
-		globalExceptionModel.setErrorCreationDate(new Date());
-		
-		return new ResponseEntity<>(globalExceptionModel, HttpStatus.BAD_REQUEST);
-	}
-	
+
 	/**
 	 * exception handler for InvalidUserException
+	 * 
 	 * @param e
 	 * @return
 	 */
@@ -94,12 +95,13 @@ public class TweetsExceptionHandler {
 		globalExceptionModel.setErrorMessage(e.getMessage());
 		globalExceptionModel.setErrorDescription("");
 		globalExceptionModel.setErrorCreationDate(new Date());
-		
+
 		return new ResponseEntity<>(globalExceptionModel, HttpStatus.BAD_REQUEST);
 	}
-	
+
 	/**
 	 * exception handler for InvalidTokenException
+	 * 
 	 * @param e
 	 * @return
 	 */
@@ -108,13 +110,13 @@ public class TweetsExceptionHandler {
 		globalExceptionModel.setErrorMessage(TweetConstants.INVALID_TOKEN_MSG);
 		globalExceptionModel.setErrorDescription("");
 		globalExceptionModel.setErrorCreationDate(new Date());
-		
+
 		return new ResponseEntity<>(globalExceptionModel, HttpStatus.UNAUTHORIZED);
 	}
-	
+
 	/**
-	 * task-1
-	 * exception handler for NoUsersFoundException
+	 * task-1 exception handler for NoUsersFoundException
+	 * 
 	 * @param e
 	 * @return
 	 */
@@ -123,7 +125,8 @@ public class TweetsExceptionHandler {
 		globalExceptionModel.setErrorMessage(TweetConstants.NO_USERS_FOUND_MSG);
 		globalExceptionModel.setErrorDescription("");
 		globalExceptionModel.setErrorCreationDate(new Date());
-		
+
 		return new ResponseEntity<>(globalExceptionModel, HttpStatus.NOT_FOUND);
 	}
+
 }
