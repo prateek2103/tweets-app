@@ -1,6 +1,5 @@
 package com.tweetapp.controller;
 
-import static com.tweetapp.constants.TweetConstants.BASE_PATH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -12,12 +11,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tweetapp.constants.TweetConstants;
+import com.tweetapp.constants.TweetConstants.REQUEST_TYPE;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
@@ -55,10 +53,6 @@ class UserControllerTest {
 	private UserDoc testUser;
 
 	private UserDoc testRegisterUser;
-
-	private enum REQUEST_TYPE {
-		GET_VALID_REQUEST, GET_INVALID_REQUEST
-	}
 
 	private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -103,7 +97,7 @@ class UserControllerTest {
 	void test_login_validRequest() throws Exception {
 
 		mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON)
-				.content(getLoginRequest(REQUEST_TYPE.GET_VALID_REQUEST))).andExpect(status().isOk())
+				.content(testUtil.getLoginRequest(REQUEST_TYPE.GET_VALID_REQUEST))).andExpect(status().isOk())
 				.andExpect(jsonPath("$.username", is(testUser.getUsername()))).andReturn();
 
 	}
@@ -117,7 +111,7 @@ class UserControllerTest {
 	void test_login_invalidRequest() throws Exception {
 
 		mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON)
-				.content(getLoginRequest(REQUEST_TYPE.GET_INVALID_REQUEST))).andExpect(status().isBadRequest())
+				.content(testUtil.getLoginRequest(REQUEST_TYPE.GET_INVALID_REQUEST))).andExpect(status().isBadRequest())
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
 				.andExpect(result -> assertEquals(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG,
 						result.getResolvedException().getMessage()))
@@ -138,7 +132,7 @@ class UserControllerTest {
 		// get the token via rest api call to login
 		String response = mockMvc
 				.perform(post("/login").contentType(MediaType.APPLICATION_JSON)
-						.content(getLoginRequest(REQUEST_TYPE.GET_VALID_REQUEST)))
+						.content(testUtil.getLoginRequest(REQUEST_TYPE.GET_VALID_REQUEST)))
 				.andReturn().getResponse().getContentAsString();
 
 		// convert string response to json to get the token
@@ -190,8 +184,8 @@ class UserControllerTest {
 	@Test
 	void test_registerUserValidRequest() throws UnsupportedEncodingException, Exception {
 		mockMvc.perform(post("/register").contentType(MediaType.APPLICATION_JSON)
-				.content(getRegisterUserRequest(REQUEST_TYPE.GET_VALID_REQUEST))).andExpect(status().isCreated())
-				.andReturn();
+				.content(testUtil.getRegisterUserRequest(REQUEST_TYPE.GET_VALID_REQUEST)))
+				.andExpect(status().isCreated()).andReturn();
 
 		// check if the user is saved in the database
 		UserDoc actualUser = userRepo.findByUsername(testRegisterUser.getUsername());
@@ -208,7 +202,8 @@ class UserControllerTest {
 	@Test
 	void test_registerUserInvalidRequest() throws UnsupportedEncodingException, Exception {
 		mockMvc.perform(post("/register").contentType(MediaType.APPLICATION_JSON)
-				.content(getRegisterUserRequest(REQUEST_TYPE.GET_INVALID_REQUEST))).andExpect(status().isBadRequest())
+				.content(testUtil.getRegisterUserRequest(REQUEST_TYPE.GET_INVALID_REQUEST)))
+				.andExpect(status().isBadRequest())
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
 				.andExpect(result -> assertEquals(TweetConstants.INVALID_PHONE_NUM_MSG,
 						result.getResolvedException().getMessage()))
@@ -290,43 +285,6 @@ class UserControllerTest {
 			userRepo.delete(registerUser);
 
 		log.info("dummy data cleanup successful");
-	}
-
-	/**
-	 * get login request for the rest api call
-	 * 
-	 * @param getValidRequest
-	 * @return
-	 * @throws IOException
-	 */
-	private String getLoginRequest(REQUEST_TYPE requestType) throws IOException {
-
-		if (REQUEST_TYPE.GET_VALID_REQUEST == requestType) {
-			return FileUtils.readFileToString(new File(BASE_PATH + "validLoginRequest.json").getAbsoluteFile(),
-					"UTF-8");
-		}
-
-		return FileUtils.readFileToString(new File(BASE_PATH + "invalidLoginRequest.json").getAbsoluteFile(), "UTF-8");
-
-	}
-
-	/**
-	 * method to get request as string format before calling the rest api for
-	 * register user
-	 * 
-	 * @param requestType
-	 * @return
-	 * @throws IOException
-	 */
-	private String getRegisterUserRequest(REQUEST_TYPE requestType) throws IOException {
-		if (REQUEST_TYPE.GET_VALID_REQUEST == requestType) {
-			return FileUtils.readFileToString(new File(BASE_PATH + "validRegisterRequest.json").getAbsoluteFile(),
-					"UTF-8");
-		}
-
-		return FileUtils.readFileToString(new File(BASE_PATH + "invalidPhoneRegisterRequest.json").getAbsoluteFile(),
-				"UTF-8");
-
 	}
 
 }

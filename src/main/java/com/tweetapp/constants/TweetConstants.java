@@ -30,4 +30,7 @@ public class TweetConstants {
 	
 	//constants
 	public static final String BASE_PATH = "src/test/resources/";
+	public enum REQUEST_TYPE {
+		GET_VALID_REQUEST, GET_INVALID_REQUEST
+	}
 }

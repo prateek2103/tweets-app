@@ -99,7 +99,7 @@ public class UserServiceImpl implements IUserService {
 	 */
 	@Override
 	public void forgetPasswordUser(String username, String password, String token) throws InvalidTokenException {
-		AuthResponse userValidity = getValidity(token);
+		AuthResponse userValidity = tweetUtil.getValidity(token);
 
 		// if user is valid then get user details and update the password
 		if (userValidity.isValid() && userValidity.getUsername().equals(username)) {
@@ -111,40 +111,6 @@ public class UserServiceImpl implements IUserService {
 			throw new InvalidTokenException();
 		}
 
-	}
-
-	/**
-	 * helper method to validate the jwt token
-	 * 
-	 * @param token
-	 * @return
-	 * @throws InvalidTokenException
-	 */
-	public AuthResponse getValidity(String token) throws InvalidTokenException {
-
-		// removing the Bearer from the header
-		String token1 = tweetUtil.getPureToken(token);
-
-		AuthResponse authResponse = new AuthResponse();
-
-		// if valid
-		if (jwtUtil.validateToken(token1).equals(Boolean.TRUE)) {
-
-			log.info("authentication token is valid");
-
-			// extract the user name
-			String username = jwtUtil.extractUsername(token1);
-
-			// set the values for the response
-			authResponse.setUsername(username);
-			authResponse.setValid(true);
-
-		} else {
-			log.error("authentication token is not valid");
-			authResponse.setValid(false);
-		}
-
-		return authResponse;
 	}
 
 	/**

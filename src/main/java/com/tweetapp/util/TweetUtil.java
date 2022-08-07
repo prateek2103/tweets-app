@@ -1,12 +1,24 @@
 package com.tweetapp.util;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.constants.TweetConstants;
+import com.tweetapp.document.TweetDoc;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
+import com.tweetapp.model.AuthResponse;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * utility class for tweetsApp
@@ -15,7 +27,11 @@ import com.tweetapp.exception.InvalidUserException;
  *
  */
 @Component
+@Slf4j
 public class TweetUtil {
+	
+	@Autowired
+	private JwtUtil jwtUtil;
 
 	//constants
 	private static final String MESSAGE_START = "tweetsApp.users index:";
@@ -92,4 +108,56 @@ public class TweetUtil {
 		return bCryptPasswordEncoder.matches(userPassword, dbPassword);
 	}
 
+	/**
+	 * helper method to validate the jwt token
+	 * 
+	 * @param token
+	 * @return
+	 * @throws InvalidTokenException
+	 */
+	public AuthResponse getValidity(String token) throws InvalidTokenException {
+
+		// removing the Bearer from the header
+		String token1 = getPureToken(token);
+
+		AuthResponse authResponse = new AuthResponse();
+
+		// if valid
+		if (jwtUtil.validateToken(token1).equals(Boolean.TRUE)) {
+
+			log.info("authentication token is valid");
+
+			// extract the user name
+			String username = jwtUtil.extractUsername(token1);
+
+			// set the values for the response
+			authResponse.setUsername(username);
+			authResponse.setValid(true);
+
+		} else {
+			log.error("authentication token is not valid");
+			authResponse.setValid(false);
+		}
+
+		return authResponse;
+	}
+	
+	/**
+	 * method to filter tweets data
+	 * @param tweets
+	 * @return
+	 */
+	public MappingJacksonValue filterTweetData(List<TweetDoc> tweets) {// filter out the unnecessary properties
+		SimpleBeanPropertyFilter tweetFilter = SimpleBeanPropertyFilter.filterOutAllExcept("handle", "message", "id",
+				"createdAt", "avatarUrl", "likesOnTweet");
+
+		FilterProvider filters = new SimpleFilterProvider().addFilter("TweetDocFilter", tweetFilter);
+
+		MappingJacksonValue tweetsMapping = new MappingJacksonValue(tweets);
+
+		tweetsMapping.setFilters(filters);
+		
+		return tweetsMapping;
+		
+	}
 }

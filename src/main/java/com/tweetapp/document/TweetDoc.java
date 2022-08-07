@@ -8,6 +8,9 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
+import com.mongodb.lang.NonNull;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,20 +23,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@Document(collection="tweet")
-public class Tweet {
+@Document(collection="tweets")
+@JsonFilter("TweetDocFilter")
+public class TweetDoc {
 	@Id
 	private String id;
 	
 	@Field(name="msg")
+	@NonNull
 	private String message;
 	
 	@Field(name="creat_tm")
+	@NonNull
 	private Date createdAt;
 	
+	@NonNull
 	private String handle;
-	
-	private String name;
 	
 	private String avatarUrl;
 	
@@ -43,5 +48,5 @@ public class Tweet {
 	private boolean isReply;
 	
 	@DBRef
-	private List<Tweet> replies;
+	private List<TweetDoc> replies;
 }
