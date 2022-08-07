@@ -21,4 +21,6 @@ public interface ITweetRepository extends MongoRepository<TweetDoc, String> {
 	 * @return
 	 */
 	public List<TweetDoc> findByHandle(String handle);
+
+	public void deleteByHandle(String handle);
 }

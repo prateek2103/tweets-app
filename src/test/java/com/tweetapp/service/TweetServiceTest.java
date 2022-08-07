@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.exception.InvalidTokenException;
+import com.tweetapp.exception.NoTweetsFoundException;
 import com.tweetapp.model.AuthResponse;
 import com.tweetapp.repository.ITweetRepository;
 import com.tweetapp.service.impl.TweetServiceImpl;
@@ -78,5 +80,42 @@ class TweetServiceTest {
 
 		//then
 		assertThrows(InvalidTokenException.class, () -> tweetService.getAllTweets(TEST_TOKEN));
+	}
+	
+	/**
+	 * method to test getTweetsByUsername
+	 * @throws NoTweetsFoundException
+	 * @throws InvalidTokenException 
+	 */
+	@Test
+	void test_getTweetsByUsername() throws NoTweetsFoundException, InvalidTokenException {
+		List<TweetDoc> tweets = new ArrayList<>(Arrays.asList(new TweetDoc()));
+		
+		//when
+		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(tweetRepository.findByHandle(TEST_USER)).thenReturn(tweets);
+		
+		List<TweetDoc> actualTweets = tweetService.getTweetsByUsername(TEST_TOKEN,TEST_USER);
+		
+		//then
+		assertEquals(tweets,actualTweets);
+		
+	}
+	
+	/**
+	 * method to test getTweetsByUsername throws exception
+	 * @throws NoTweetsFoundException
+	 * @throws InvalidTokenException 
+	 */
+	@Test
+	void test_getTweetsByUsernameThrowsException() throws NoTweetsFoundException, InvalidTokenException {
+		List<TweetDoc> tweets = new ArrayList<>();
+		
+		//when
+		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(tweetRepository.findByHandle(TEST_USER)).thenReturn(tweets);
+		
+		//then
+		assertThrows(NoTweetsFoundException.class,()->tweetService.getTweetsByUsername(TEST_TOKEN,TEST_USER));
 	}
 }

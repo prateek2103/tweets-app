@@ -1,11 +1,18 @@
 package com.tweetapp.util;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.constants.TweetConstants;
+import com.tweetapp.document.TweetDoc;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
@@ -133,5 +140,24 @@ public class TweetUtil {
 		}
 
 		return authResponse;
+	}
+	
+	/**
+	 * method to filter tweets data
+	 * @param tweets
+	 * @return
+	 */
+	public MappingJacksonValue filterTweetData(List<TweetDoc> tweets) {// filter out the unnecessary properties
+		SimpleBeanPropertyFilter tweetFilter = SimpleBeanPropertyFilter.filterOutAllExcept("handle", "message", "id",
+				"createdAt", "avatarUrl", "likesOnTweet");
+
+		FilterProvider filters = new SimpleFilterProvider().addFilter("TweetDocFilter", tweetFilter);
+
+		MappingJacksonValue tweetsMapping = new MappingJacksonValue(tweets);
+
+		tweetsMapping.setFilters(filters);
+		
+		return tweetsMapping;
+		
 	}
 }

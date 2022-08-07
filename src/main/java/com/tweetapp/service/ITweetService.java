@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.exception.InvalidTokenException;
+import com.tweetapp.exception.NoTweetsFoundException;
 
 /**
  * service to handle CRUD operations on tweet
@@ -13,11 +14,13 @@ import com.tweetapp.exception.InvalidTokenException;
 public interface ITweetService {
 	
 	/**
+	 * story task-2
 	 * service to get all tweets for a particular username
 	 * @param username
 	 * @return
+	 * @throws InvalidTokenException 
 	 */
-	public List<TweetDoc> getTweetsByUsername(String username);
+	public List<TweetDoc> getTweetsByUsername(String authToken, String username) throws NoTweetsFoundException, InvalidTokenException;
 
 	/**
 	 * service to post tweet for a particular username
