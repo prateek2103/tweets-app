@@ -2,6 +2,7 @@ package com.tweetapp.controller;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +31,7 @@ import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
+import com.tweetapp.exception.NoTweetsFoundException;
 import com.tweetapp.repository.ITweetRepository;
 import com.tweetapp.repository.IUserRepository;
 import com.tweetapp.util.TestUtil;
@@ -73,7 +76,11 @@ class TweetControllerTest {
 
 	private static final String TEST_USER = "testUser";
 
+	private static final String TEST_USER_2 = "testUser2";
+
 	private static final String TEST_USER_NOT_EXISTS = "testUserNotExists";
+
+	private String testId;
 
 	@BeforeEach
 	public void setup() throws JsonProcessingException, IOException {
@@ -97,7 +104,7 @@ class TweetControllerTest {
 		tweet.setReply(true);
 
 		// save in the database
-		tweetRepository.save(tweet);
+		testId = tweetRepository.save(tweet).getId();
 
 		log.info("dummy data setup successfully");
 	}
@@ -203,6 +210,68 @@ class TweetControllerTest {
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.INVALID_TOKEN_MSG)));
 	}
 
+	/**
+	 * method to test delete tweet by id
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	void test_deleteTweetById() throws Exception {
+		String fullToken = testUtil.getAuthToken();
+
+		mockMvc.perform(get("/api/v1.0/tweets/" + TEST_USER + "/delete/" + testId).header("Authorization", fullToken)
+				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
+
+		// assert
+		Optional<TweetDoc> tweet = tweetRepository.findById(testId);
+		assertFalse(tweet.isPresent());
+
+	}
+
+	/**
+	 * method to test deleteTweetById throws exception when tweet does not exist
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	void test_deleteTweetByIdThrowsExceptionTweetNotExists() throws Exception {
+		String fullToken = testUtil.getAuthToken();
+
+		mockMvc.perform(get("/api/v1.0/tweets/" + TEST_USER + "/delete/" + 123).header("Authorization", fullToken)
+				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isNotFound())
+				.andExpect(result -> assertTrue(result.getResolvedException() instanceof NoTweetsFoundException))
+				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.TWEET_NOT_EXIST_MSG)));
+	}
+
+	/**
+	 * method to test deleteTweetById throws exception when username is differnent
+	 * then the tweet's
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	void test_deleteTweetByIdThrowsExceptionWhenTweetUserisDifferent() throws Exception {
+		String fullToken = testUtil.getAuthToken();
+
+		mockMvc.perform(get("/api/v1.0/tweets/" + TEST_USER_2 + "/delete/" + testId).header("Authorization", fullToken)
+				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isUnauthorized())
+				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidTokenException))
+				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.INVALID_TOKEN_MSG)));
+	}
+
+	/**
+	 * method to test deleteTweetById throws exception when token is invalid
+	 * @throws Exception
+	 */
+	@Test
+	void test_deleteTweetByIdThrowsExceptionOnInvalidToken() throws Exception {
+		
+		mockMvc.perform(get("/api/v1.0/tweets/" + TEST_USER + "/delete/" + testId).header("Authorization", TEST_TOKEN)
+				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isUnauthorized())
+				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidTokenException))
+				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.INVALID_TOKEN_MSG)));
+	}
+	
 	@AfterEach
 	public void tearDown() {
 		log.info("cleaning dummy data");

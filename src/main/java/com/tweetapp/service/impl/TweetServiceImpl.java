@@ -3,6 +3,7 @@ package com.tweetapp.service.impl;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,11 @@ import com.tweetapp.repository.ITweetRepository;
 import com.tweetapp.service.ITweetService;
 import com.tweetapp.util.TweetUtil;
 
+/**
+ * service class to handle tweet related operations
+ * @author prateekpurohit
+ *
+ */
 @Service
 public class TweetServiceImpl implements ITweetService {
 
@@ -88,6 +94,40 @@ public class TweetServiceImpl implements ITweetService {
 			throw new InvalidTokenException();
 		}
 
+	}
+
+	/**
+	 * task-3 method to delete tweet by id
+	 * @throws NoTweetsFoundException 
+	 */
+	@Override
+	public void deleteTweetById(String id,String username, String authToken) throws InvalidTokenException, NoTweetsFoundException {
+		AuthResponse authResponse = tweetUtil.getValidity(authToken);
+		
+		if(authResponse.isValid()) {
+			
+			//get details about the tweet
+			Optional<TweetDoc> tweet = tweetRepository.findById(id);
+			
+			//if tweet does not exist
+			if(!tweet.isPresent()) {
+				throw new NoTweetsFoundException(TweetConstants.TWEET_NOT_EXIST_MSG);
+			}
+			else {
+				
+				//match the tweet user with the token user before deleting
+				if(!username.equals(authResponse.getUsername()))
+					throw new InvalidTokenException();
+				
+				tweetRepository.delete(tweet.get());
+				
+			}
+		}
+		
+		else {
+			throw new InvalidTokenException();
+		}
+		
 	}
 
 }
