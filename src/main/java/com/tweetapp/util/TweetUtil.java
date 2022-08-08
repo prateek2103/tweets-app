@@ -15,6 +15,7 @@ import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
+import com.tweetapp.exception.InvalidTweetException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.model.AuthResponse;
 
@@ -160,4 +161,5 @@ public class TweetUtil {
 		return tweetsMapping;
 		
 	}
+	
 }

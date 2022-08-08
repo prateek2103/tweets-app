@@ -19,6 +19,7 @@ public class TweetConstants {
 	public static final String SUCCESS_DEL_MSG = "tweet deleted successfully";
 	public static final String SUCCESS_LIKE_TWEET_MSG = "tweet liked successfully";
 	public static final String SUCCESS_REPLY_TWEET_MSG = "replied to tweet successfully";
+	public static final String SUCCESS_UPDATE_TWEET = "tweet updated successfully";
 	
 	//error message description
 	public static final String TWEETS_NOT_FOUND_MESSAGE = "no tweets found for this username";
@@ -33,6 +34,7 @@ public class TweetConstants {
 	public static final String TWEET_NOT_EXIST_MSG = "tweet does not exist";
 	public static final String USER_NOT_LIKE_MSG = "user cannot like their own tweets";
 	public static final String TWEET_LIMIT_EXCEED = "tweet cannot exceed 144 characters";
+	
 	//constants
 	public static final String BASE_PATH = "src/test/resources/";
 	public enum REQUEST_TYPE {

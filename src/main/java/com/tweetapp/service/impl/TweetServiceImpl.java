@@ -61,25 +61,15 @@ public class TweetServiceImpl implements ITweetService {
 
 	/**
 	 * method to post a tweet for a particular username
+	 * @throws InvalidTweetException 
 	 */
 	@Override
-	public void addTweetForUsername(String username, TweetDoc tweet) {
+	public void addTweet(TweetDoc tweet) throws InvalidTweetException {
 
-		tweet.setHandle(username);
-		tweet.setAvatarUrl("some url");
-		tweet.setCreatedAt(new Date());
-		tweet.setLikesOnTweet(1l);
-		tweet.setMessage("new message");
-		tweet.setReply(false);
-
-		TweetDoc reply = new TweetDoc();
-		reply.setMessage("reply message");
-		reply.setCreatedAt(new Date());
-
-		tweetRepository.save(reply);
-
-		tweet.setReplies(Arrays.asList(reply));
-
+		if(tweet.getMessage().length()>144) {
+			throw new InvalidTweetException(TweetConstants.TWEET_LIMIT_EXCEED);
+		}
+		
 		tweetRepository.save(tweet);
 	}
 
@@ -211,6 +201,46 @@ public class TweetServiceImpl implements ITweetService {
 			throw new InvalidTokenException();
 		}
 
+	}
+
+	/**
+	 * method to update tweet by id
+	 * @throws InvalidTokenException 
+	 * @throws NoTweetsFoundException 
+	 * @throws InvalidUserException 
+	 * @throws InvalidTweetException 
+	 */
+	@Override
+	public void updateTweetById(String id, String username, String token, TweetDoc updateTweet) throws InvalidTokenException, NoTweetsFoundException, InvalidUserException, InvalidTweetException {
+		
+		AuthResponse authResponse = tweetUtil.getValidity(token);
+		
+		if(authResponse.isValid()) {
+			Optional<TweetDoc> tweetOp = tweetRepository.findById(id);
+
+			//if tweet is not present
+			if (!tweetOp.isPresent()) {
+				throw new NoTweetsFoundException(TweetConstants.TWEET_NOT_EXIST_MSG);
+			}
+
+			//if the username is different from the token or the tweet belongs to a different user
+			if(!username.equals(authResponse.getUsername()) ||!username.equals(tweetOp.get().getHandle())) {
+				throw new InvalidUserException(TweetConstants.INVALID_USER_DETAILS);
+			}
+			
+			if(updateTweet.getMessage().length()>144) {
+				throw new InvalidTweetException(TweetConstants.TWEET_LIMIT_EXCEED);
+			}
+			
+			//update the tweet
+			TweetDoc realTweet = tweetOp.get();
+			realTweet.setMessage(updateTweet.getMessage());
+			tweetRepository.save(realTweet);
+
+		}else {
+			throw new InvalidTokenException();
+		}
+		
 	}
 
 }
