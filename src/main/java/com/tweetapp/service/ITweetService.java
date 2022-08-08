@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.exception.InvalidTokenException;
+import com.tweetapp.exception.InvalidTweetException;
+import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoTweetsFoundException;
 
 /**
@@ -44,4 +46,29 @@ public interface ITweetService {
 	 * @throws NoTweetsFoundException 
 	 */
 	public void deleteTweetById(String id, String username, String token) throws InvalidTokenException, NoTweetsFoundException;
+	
+	/**
+	 * method to like tweet by id
+	 * 
+	 * @param id
+	 * @param username
+	 * @param token
+	 * @throws NoTweetsFoundException
+	 * @throws InvalidUserException
+	 * @throws InvalidTokenException
+	 */
+	public void likeTweetById(String id, String username, String token) throws NoTweetsFoundException, InvalidUserException, InvalidTokenException;
+
+	/**
+	 * method to reply to tweet by id
+	 * 
+	 * @param id
+	 * @param username
+	 * @param token
+	 * @throws InvalidTokenException
+	 * @throws NoTweetsFoundException
+	 * @throws InvalidTweetException
+	 * @throws InvalidUserException 
+	 */
+	public void replyTweetById(String id, String username, String token, TweetDoc tweet) throws InvalidTokenException, NoTweetsFoundException, InvalidTweetException, InvalidUserException;
 }

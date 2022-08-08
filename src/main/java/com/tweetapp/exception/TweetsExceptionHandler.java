@@ -129,4 +129,18 @@ public class TweetsExceptionHandler extends ResponseEntityExceptionHandler {
 		return new ResponseEntity<>(globalExceptionModel, HttpStatus.NOT_FOUND);
 	}
 
+	/**
+	 * task-5
+	 * exception handler for InvalidTweetException
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(InvalidTweetException.class)
+	public ResponseEntity<TweetsExceptionHandlerModel> handleInvalidTweetException(InvalidTweetException e) {
+		globalExceptionModel.setErrorMessage(e.getMessage());
+		globalExceptionModel.setErrorDescription("");
+		globalExceptionModel.setErrorCreationDate(new Date());
+
+		return new ResponseEntity<>(globalExceptionModel, HttpStatus.BAD_REQUEST);
+	}
 }
