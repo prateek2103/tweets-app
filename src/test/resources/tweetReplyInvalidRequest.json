@@ -1,0 +1,8 @@
+{
+    "message" : "this is a new tweet by newHandlethis is a new tweet by newHandlethis is a new tweet by newHandlethis is a new tweet by newHandlethis is a new tweet by newHandle", 
+    "createdAt" : "2022-08-07T15:07:10.383+0000", 
+    "handle" : "usernameSuman", 
+    "avatarUrl" : "url", 
+    "likesOnTweet" : 0, 
+    "isReply" : true
+}
