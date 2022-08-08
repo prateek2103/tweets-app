@@ -2,18 +2,24 @@ package com.tweetapp.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.Date;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.converter.json.MappingJacksonValue;
 
 import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.constants.TweetConstants;
+import com.tweetapp.document.TweetDoc;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
@@ -109,6 +115,22 @@ class TweetUtilTest {
 		AuthResponse authResponse = tweetUtil.getValidity(COMPLETE_TEST_VALID_TOKEN);
 		assertFalse(authResponse.isValid());
 		
+	}
+	
+	@Test
+	void test_filterTweetData() {
+		TweetDoc tweet = new TweetDoc();
+		tweet.setAvatarUrl("url");
+		tweet.setCreatedAt(new Date());
+		tweet.setHandle("username");
+		tweet.setId("123");
+		tweet.setLikesOnTweet(1L);
+		tweet.setMessage("this is a dummy message");
+		tweet.setReplies(Arrays.asList(new TweetDoc()));
+		tweet.setReply(true);
+		
+		MappingJacksonValue result = tweetUtil.filterTweetData(Arrays.asList(tweet));
+		assertNotNull(result);
 	}
 
 }

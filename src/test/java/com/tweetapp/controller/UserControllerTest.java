@@ -153,12 +153,7 @@ class UserControllerTest {
 		assertTrue(tweetUtil.comparePasswords(responseUser.getPassword(), TEST_PASSWORD));
 	}
 
-	/**
-	 * method to test forget password for invalid token
-	 * 
-	 * @throws IOException
-	 * @throws Exception
-	 */
+
 	@Test
 	void test_forgetPasswordInvalidToken() throws IOException, Exception {
 		String uri = String.format("/%s/forgetPassword", testUser.getUsername());

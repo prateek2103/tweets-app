@@ -10,16 +10,20 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidTweetException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoTweetsFoundException;
+import com.tweetapp.kafka.TweetEventProducer;
+import com.tweetapp.model.AuthResponse;
 import com.tweetapp.service.ITweetService;
 import com.tweetapp.util.TweetUtil;
 
@@ -37,6 +41,9 @@ public class TweetsController {
 
 	@Autowired
 	private TweetUtil tweetUtil;
+
+	@Autowired
+	private TweetEventProducer tweetEventProducer;
 
 	/**
 	 * rest service to get all tweets for a particular username
@@ -58,12 +65,30 @@ public class TweetsController {
 		return ResponseEntity.status(HttpStatus.OK).body(tweetsMapping);
 	}
 
+	/**
+	 * method to post a new tweet by a user
+	 * 
+	 * @param username
+	 * @param tweet
+	 * @return
+	 * @throws JsonProcessingException
+	 * @throws InvalidTokenException
+	 */
 	@PostMapping("/api/v1.0/tweets/{username}/add")
-	public ResponseEntity<String> postTweet(@PathVariable String username, @RequestBody TweetDoc tweet) {
+	public ResponseEntity<String> postTweet(@PathVariable String username, @RequestBody TweetDoc tweet,
+			@RequestHeader("Authorization") String authToken) throws JsonProcessingException, InvalidTokenException {
 
-		tweetService.addTweetForUsername(username, tweet);
+		AuthResponse authResponse = tweetUtil.getValidity(authToken);
+		
+		if(authResponse.isValid() && authResponse.getUsername().equals(username)) {
+			tweetEventProducer.sendTweetEvent(tweet);
 
-		return ResponseEntity.status(HttpStatus.CREATED).body("new tweet added");
+			return ResponseEntity.status(HttpStatus.CREATED).body("new tweet added");
+		}
+		else {
+			throw new InvalidTokenException();
+		}
+		
 	}
 
 	/**
@@ -127,6 +152,7 @@ public class TweetsController {
 
 	/**
 	 * method to reply to a tweet
+	 * 
 	 * @param id
 	 * @param username
 	 * @param token
@@ -146,5 +172,28 @@ public class TweetsController {
 		tweetService.replyTweetById(id, username, token, tweet);
 
 		return ResponseEntity.status(HttpStatus.OK).body(TweetConstants.SUCCESS_REPLY_TWEET_MSG);
+	}
+
+	/**
+	 * method to update a tweet by id
+	 * 
+	 * @param id
+	 * @param username
+	 * @param token
+	 * @param tweet
+	 * @return
+	 * @throws InvalidTokenException
+	 * @throws NoTweetsFoundException
+	 * @throws InvalidUserException
+	 * @throws InvalidTweetException
+	 */
+	@PutMapping("/api/v1.0/tweets/{username}/update/{id}")
+	public ResponseEntity<String> updateTweetById(@PathVariable("id") String id,
+			@PathVariable("username") String username, @RequestHeader("Authorization") String token,
+			@RequestBody TweetDoc tweet)
+			throws InvalidTokenException, NoTweetsFoundException, InvalidUserException, InvalidTweetException {
+
+		tweetService.updateTweetById(id, username, token, tweet);
+		return ResponseEntity.status(HttpStatus.OK).body(TweetConstants.SUCCESS_UPDATE_TWEET);
 	}
 }
