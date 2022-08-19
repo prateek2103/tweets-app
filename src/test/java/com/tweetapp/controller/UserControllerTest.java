@@ -20,9 +20,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -31,13 +34,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.constants.TweetConstants.REQUEST_TYPE;
 import com.tweetapp.document.UserDoc;
-import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoUsersFoundException;
-import com.tweetapp.model.LoginResponse;
 import com.tweetapp.repository.IUserRepository;
 import com.tweetapp.util.TestUtil;
-import com.tweetapp.util.TweetUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,7 +69,8 @@ class UserControllerTest {
 	private TestUtil testUtil;
 
 	@Autowired
-	private TweetUtil tweetUtil;
+	@Qualifier("passwordEncoder")
+	private PasswordEncoder passwordEncoder;
 
 	@BeforeEach
 	public void setup() throws JsonProcessingException, IOException {
@@ -82,7 +83,7 @@ class UserControllerTest {
 		testRegisterUser = testUtil.getUserObjectFromJson(USER_REGISTER_REQUEST_JSON);
 
 		// save the dummy data in the database (encrypt password beforehand)
-		testUser.setPassword(tweetUtil.encryptPassword(testUser.getPassword()));
+		testUser.setPassword(passwordEncoder.encode(testUser.getPassword()));
 		userRepo.save(testUser);
 
 		log.info("dummy data setup successfully");
@@ -111,8 +112,9 @@ class UserControllerTest {
 	void test_login_invalidRequest() throws Exception {
 
 		mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON)
-				.content(testUtil.getLoginRequest(REQUEST_TYPE.GET_INVALID_REQUEST))).andExpect(status().isBadRequest())
-				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
+				.content(testUtil.getLoginRequest(REQUEST_TYPE.GET_INVALID_REQUEST)))
+				.andExpect(status().isUnauthorized())
+				.andExpect(result -> assertTrue(result.getResolvedException() instanceof BadCredentialsException))
 				.andExpect(result -> assertEquals(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG,
 						result.getResolvedException().getMessage()))
 				.andReturn();
@@ -129,45 +131,38 @@ class UserControllerTest {
 	void test_forgetPasswordValidUser() throws IOException, Exception {
 		String uri = String.format("/%s/forgetPassword", testUser.getUsername());
 
-		// get the token via rest api call to login
-		String response = mockMvc
-				.perform(post("/login").contentType(MediaType.APPLICATION_JSON)
-						.content(testUtil.getLoginRequest(REQUEST_TYPE.GET_VALID_REQUEST)))
-				.andReturn().getResponse().getContentAsString();
-
-		// convert string response to json to get the token
-
-		LoginResponse userData = objectMapper.readValue(response, LoginResponse.class);
+		String tokenString = testUtil.getAuthToken();
 
 		// call the rest api
-		String updateResponse = mockMvc
-				.perform(post(uri).contentType(MediaType.APPLICATION_JSON).content(TEST_PASSWORD).header(AUTH_HEADER,
-						"Bearer " + userData.getAuthToken()))
-				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+		String updateResponse = mockMvc.perform(post(uri).contentType(MediaType.APPLICATION_JSON).content(TEST_PASSWORD)
+				.header(AUTH_HEADER, tokenString)).andExpect(status().isOk()).andReturn().getResponse()
+				.getContentAsString();
 
 		// assert the response
 		assertEquals(TweetConstants.UPDATE_PASS_MSG, updateResponse);
 
 		// check if user's password is updated in the database
 		UserDoc responseUser = userRepo.findByUsername(testUser.getUsername());
-		assertTrue(tweetUtil.comparePasswords(responseUser.getPassword(), TEST_PASSWORD));
+		assertTrue(passwordEncoder.matches(TEST_PASSWORD, responseUser.getPassword()));
 	}
 
-
+	/**
+	 * test method forget password when token is invalid
+	 * 
+	 * @throws IOException
+	 * @throws Exception
+	 */
 	@Test
 	void test_forgetPasswordInvalidToken() throws IOException, Exception {
 		String uri = String.format("/%s/forgetPassword", testUser.getUsername());
 
 		// call the rest api
 		mockMvc.perform(post(uri).contentType(MediaType.APPLICATION_JSON).content(TEST_PASSWORD).header(AUTH_HEADER,
-				TEST_TOKEN)).andExpect(status().isUnauthorized())
-				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidTokenException))
-				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.INVALID_TOKEN_MSG))).andReturn().getResponse()
-				.getContentAsString();
+				TEST_TOKEN)).andExpect(status().isUnauthorized());
 
 		// check if user's password is updated in the database
 		UserDoc responseUser = userRepo.findByUsername(testUser.getUsername());
-		assertFalse(tweetUtil.comparePasswords(responseUser.getPassword(), TEST_PASSWORD));
+		assertFalse(passwordEncoder.matches(TEST_PASSWORD, responseUser.getPassword()));
 	}
 
 	/**
@@ -217,8 +212,10 @@ class UserControllerTest {
 	 */
 	@Test
 	void test_getAllUsers() throws UnsupportedEncodingException, Exception {
-		String response = mockMvc.perform(get("/api/v1.0/tweets/users/all")).andExpect(status().isOk()).andReturn()
-				.getResponse().getContentAsString();
+		String tokenString = testUtil.getAuthToken();
+
+		String response = mockMvc.perform(get("/users/all").header(AUTH_HEADER, tokenString)).andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
 
 		// convert response to UserDoc list
 		UserDoc[] actualUsers = objectMapper.readValue(response, UserDoc[].class);
@@ -226,6 +223,17 @@ class UserControllerTest {
 
 		// assert
 		assertEquals(expectedUsers.size(), actualUsers.length);
+	}
+
+	/**
+	 * test method get all users throws exception on invalid user
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	void test_getAllUsersThrowsExceptionOnInvalidToken() throws Exception {
+		mockMvc.perform(get("/users/all").header(AUTH_HEADER, TEST_TOKEN)).andExpect(status().isUnauthorized())
+				.andReturn();
 	}
 
 	/**
@@ -237,8 +245,9 @@ class UserControllerTest {
 	@Test
 	void test_getUsersByUsername_userExists() throws UnsupportedEncodingException, Exception {
 		String partialUsername = "us";
+		String tokenString = testUtil.getAuthToken();
 
-		String response = mockMvc.perform(get("/api/v/1.0/tweets/user/search/" + partialUsername))
+		String response = mockMvc.perform(get("/user/search/" + partialUsername).header(AUTH_HEADER, tokenString))
 				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
 		// convert response to UserDoc list
@@ -258,11 +267,25 @@ class UserControllerTest {
 	@Test
 	void test_getUsersByUsername_usersNotExists() throws UnsupportedEncodingException, Exception {
 		String partialUsername = "testUserNotExist";
+		String tokenString = testUtil.getAuthToken();
 
-		mockMvc.perform(get("/api/v/1.0/tweets/user/search/" + partialUsername)).andExpect(status().isNotFound())
+		mockMvc.perform(get("/user/search/" + partialUsername).header(AUTH_HEADER, tokenString))
+				.andExpect(status().isNotFound())
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof NoUsersFoundException))
 				.andReturn();
 
+	}
+
+	/**
+	 * test_getUsersByUsername throws exception on invalid token
+	 * @throws Exception
+	 */
+	@Test
+	void test_getUsersByUsernameThrowsExceptionOnInvalidToken() throws Exception {
+		String partialUsername = "testUserNotExist";
+
+		mockMvc.perform(get("/user/search/" + partialUsername).header(AUTH_HEADER, TEST_TOKEN))
+				.andExpect(status().isUnauthorized());
 	}
 
 	@AfterEach

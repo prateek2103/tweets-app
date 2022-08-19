@@ -99,9 +99,7 @@ public class TestUtil {
 
 		LoginResponse userData = objectMapper.readValue(response, LoginResponse.class);
 
-		String fullToken = "Bearer " + userData.getAuthToken();
-		
-		return fullToken;
+		return userData.getAuthToken();
 
 	}
 }
