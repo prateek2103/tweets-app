@@ -7,6 +7,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -137,6 +138,34 @@ public class TweetsExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(InvalidTweetException.class)
 	public ResponseEntity<TweetsExceptionHandlerModel> handleInvalidTweetException(InvalidTweetException e) {
+		globalExceptionModel.setErrorMessage(e.getMessage());
+		globalExceptionModel.setErrorDescription("");
+		globalExceptionModel.setErrorCreationDate(new Date());
+
+		return new ResponseEntity<>(globalExceptionModel, HttpStatus.BAD_REQUEST);
+	}
+	
+	/**
+	 * exception handler for BadCredentialsException
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<TweetsExceptionHandlerModel> handleBadCredentialsException(BadCredentialsException e){
+		globalExceptionModel.setErrorMessage(e.getMessage());
+		globalExceptionModel.setErrorDescription("");
+		globalExceptionModel.setErrorCreationDate(new Date());
+
+		return new ResponseEntity<>(globalExceptionModel, HttpStatus.UNAUTHORIZED);
+	}
+	
+	/**
+	 * exception handler for BadCredentialsException
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(TokenNotFoundException.class)
+	public ResponseEntity<TweetsExceptionHandlerModel> handleTokenNotFoundException(TokenNotFoundException e){
 		globalExceptionModel.setErrorMessage(e.getMessage());
 		globalExceptionModel.setErrorDescription("");
 		globalExceptionModel.setErrorCreationDate(new Date());

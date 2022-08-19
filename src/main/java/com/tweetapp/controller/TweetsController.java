@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,8 +24,8 @@ import com.tweetapp.exception.InvalidTweetException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoTweetsFoundException;
 import com.tweetapp.kafka.TweetEventProducer;
-import com.tweetapp.model.AuthResponse;
 import com.tweetapp.service.ITweetService;
+import com.tweetapp.util.JwtUtil;
 import com.tweetapp.util.TweetUtil;
 
 /**
@@ -44,6 +45,9 @@ public class TweetsController {
 
 	@Autowired
 	private TweetEventProducer tweetEventProducer;
+	
+	@Autowired
+	private JwtUtil jwtUtil;
 
 	/**
 	 * rest service to get all tweets for a particular username
@@ -53,11 +57,11 @@ public class TweetsController {
 	 * @throws NoTweetsFoundException
 	 * @throws InvalidTokenException
 	 */
-	@GetMapping("/api/v1.0/tweets/{username}")
-	public ResponseEntity<MappingJacksonValue> getTweetsByUsername(@RequestHeader("Authorization") String token,
+	@GetMapping("/tweets/{username}")
+	public ResponseEntity<MappingJacksonValue> getTweetsByUsername(
 			@PathVariable String username) throws NoTweetsFoundException, InvalidTokenException {
 
-		List<TweetDoc> tweets = tweetService.getTweetsByUsername(token, username);
+		List<TweetDoc> tweets = tweetService.getTweetsByUsername(username);
 
 		// filter out the unnecessary fields in the tweets list
 		MappingJacksonValue tweetsMapping = tweetUtil.filterTweetData(tweets);
@@ -74,19 +78,18 @@ public class TweetsController {
 	 * @throws JsonProcessingException
 	 * @throws InvalidTokenException
 	 */
-	@PostMapping("/api/v1.0/tweets/{username}/add")
+	@PostMapping("/tweets/{username}/add")
 	public ResponseEntity<String> postTweet(@PathVariable String username, @RequestBody TweetDoc tweet,
 			@RequestHeader("Authorization") String authToken) throws JsonProcessingException, InvalidTokenException {
 
-		AuthResponse authResponse = tweetUtil.getValidity(authToken);
+		String tokenUsername = jwtUtil.extractUsername(authToken);
 		
-		if(authResponse.isValid() && authResponse.getUsername().equals(username)) {
+		if(tokenUsername.equals(username)) {
 			tweetEventProducer.sendTweetEvent(tweet);
-
-			return ResponseEntity.status(HttpStatus.CREATED).body("new tweet added");
+			return ResponseEntity.status(HttpStatus.CREATED).body(TweetConstants.SUCCESS_CREATE_TWEET_MSG);
 		}
 		else {
-			throw new InvalidTokenException();
+			throw new BadCredentialsException(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG);
 		}
 		
 	}
@@ -97,11 +100,12 @@ public class TweetsController {
 	 * @param authToken
 	 * @return
 	 * @throws InvalidTokenException
+	 * @throws NoTweetsFoundException 
 	 */
-	@GetMapping("/api/v1.0/tweets/all")
-	public ResponseEntity<MappingJacksonValue> getAllTweets(@RequestHeader("Authorization") String authToken)
-			throws InvalidTokenException {
-		List<TweetDoc> tweets = tweetService.getAllTweets(authToken);
+	@GetMapping("/tweets/all")
+	public ResponseEntity<MappingJacksonValue> getAllTweets()
+			throws InvalidTokenException, NoTweetsFoundException {
+		List<TweetDoc> tweets = tweetService.getAllTweets();
 
 		// filter out the unnecessary fields in the tweets list
 		MappingJacksonValue tweetsMapping = tweetUtil.filterTweetData(tweets);
@@ -119,7 +123,7 @@ public class TweetsController {
 	 * @throws InvalidTokenException
 	 * @throws NoTweetsFoundException
 	 */
-	@DeleteMapping("/api/v1.0/tweets/{username}/delete/{id}")
+	@DeleteMapping("/tweets/{username}/delete/{id}")
 	public ResponseEntity<String> deleteTweetById(@PathVariable("id") String id,
 			@PathVariable("username") String username, @RequestHeader("Authorization") String authToken)
 			throws InvalidTokenException, NoTweetsFoundException {
@@ -140,7 +144,7 @@ public class TweetsController {
 	 * @throws InvalidUserException
 	 * @throws InvalidTokenException
 	 */
-	@PostMapping("/api/v1.0/tweets/{username}/like/{id}")
+	@PostMapping("/tweets/{username}/like/{id}")
 	public ResponseEntity<String> likeTweetById(@PathVariable("id") String id,
 			@PathVariable("username") String username, @RequestHeader("Authorization") String token)
 			throws NoTweetsFoundException, InvalidUserException, InvalidTokenException {
@@ -163,7 +167,7 @@ public class TweetsController {
 	 * @throws InvalidTokenException
 	 * @throws InvalidTweetException
 	 */
-	@PostMapping("/api/v1.0/tweets/{username}/reply/{id}")
+	@PostMapping("/tweets/{username}/reply/{id}")
 	public ResponseEntity<String> replyTweetById(@PathVariable("id") String id,
 			@PathVariable("username") String username, @RequestHeader("Authorization") String token,
 			@RequestBody TweetDoc tweet)
@@ -187,7 +191,7 @@ public class TweetsController {
 	 * @throws InvalidUserException
 	 * @throws InvalidTweetException
 	 */
-	@PutMapping("/api/v1.0/tweets/{username}/update/{id}")
+	@PutMapping("/tweets/{username}/update/{id}")
 	public ResponseEntity<String> updateTweetById(@PathVariable("id") String id,
 			@PathVariable("username") String username, @RequestHeader("Authorization") String token,
 			@RequestBody TweetDoc tweet)

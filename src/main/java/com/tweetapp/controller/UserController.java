@@ -14,10 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ser.FilterProvider;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
@@ -25,18 +21,16 @@ import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoUsersFoundException;
 import com.tweetapp.model.UserToken;
 import com.tweetapp.service.IUserService;
-
-import lombok.extern.slf4j.Slf4j;
+import com.tweetapp.util.TweetUtil;
 
 @RestController
-@Slf4j
 public class UserController {
 
 	@Autowired
 	private IUserService userService;
 
 	@Autowired
-	JwtUtil jwtUtil;
+	private TweetUtil tweetUtil;
 
 	/**
 	 * authenticates the user
@@ -64,12 +58,8 @@ public class UserController {
 	@PostMapping("/register")
 	public ResponseEntity<String> registerNewUser(@RequestBody UserDoc user) throws InvalidUserException {
 
-		log.info("signing up new user with username:{}", user.getUsername());
-
 		// register the user
 		userService.registerUser(user);
-
-		log.info("user signed up successfully");
 
 		return new ResponseEntity<>(TweetConstants.TWEETS_USER_CREATED_MESSAGE, HttpStatus.CREATED);
 	}
@@ -94,50 +84,44 @@ public class UserController {
 		}
 
 		// update the password for the user
-		log.info("updating {} password", username);
 		userService.forgetPasswordUser(username, password, token);
-		log.info("user password updated successfully");
 
 		return new ResponseEntity<>(TweetConstants.UPDATE_PASS_MSG, HttpStatus.OK);
 	}
 
 	/**
 	 * rest api call to get all users
+	 * 
 	 * @return
 	 * @throws NoUsersFoundException
 	 */
-	@GetMapping("/api/v1.0/tweets/users/all")
+	@GetMapping("/users/all")
 	public ResponseEntity<MappingJacksonValue> getAllUsers() throws NoUsersFoundException {
 
 		List<UserDoc> users = userService.getAllUsers();
-		
+
 		// filter out any other property other than firstname, lastname and username
-		SimpleBeanPropertyFilter userFilter = SimpleBeanPropertyFilter.filterOutAllExcept("username","firstName","lastName");
-		FilterProvider filters = new SimpleFilterProvider().addFilter("UserDocFilter",userFilter);
-		MappingJacksonValue usersMapping = new MappingJacksonValue(users);
-		usersMapping.setFilters(filters);
+		MappingJacksonValue usersMapping = tweetUtil.filterUserData(users);
 
 		return new ResponseEntity<>(usersMapping, HttpStatus.OK);
 	}
-	
-	
+
 	/**
 	 * rest api call to get users where username like..
+	 * 
 	 * @return
 	 * @throws NoUsersFoundException
 	 */
-	@GetMapping("/api/v/1.0/tweets/user/search/{username}")
-	public ResponseEntity<MappingJacksonValue> getUsersByUsername(@PathVariable("username") String username) throws NoUsersFoundException {
+	@GetMapping("/user/search/{username}")
+	public ResponseEntity<MappingJacksonValue> getUsersByUsername(@PathVariable("username") String username)
+			throws NoUsersFoundException {
 
 		List<UserDoc> users = userService.getUsersByUsername(username);
-		
+
 		// filter out any other property other than firstname, lastname and username
-		SimpleBeanPropertyFilter userFilter = SimpleBeanPropertyFilter.filterOutAllExcept("username","firstName","lastName");
-		FilterProvider filters = new SimpleFilterProvider().addFilter("UserDocFilter",userFilter);
-		MappingJacksonValue usersMapping = new MappingJacksonValue(users);
-		usersMapping.setFilters(filters);
+		MappingJacksonValue usersMapping = tweetUtil.filterUserData(users);
 
 		return new ResponseEntity<>(usersMapping, HttpStatus.OK);
 	}
-	
+
 }

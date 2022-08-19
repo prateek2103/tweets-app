@@ -11,7 +11,7 @@ import com.tweetapp.exception.NoUsersFoundException;
 import com.tweetapp.model.UserToken;
 
 public interface IUserService extends UserDetailsService {
-
+	
 	/**
 	 * authenticates the user and returns jwt token
 	 * 

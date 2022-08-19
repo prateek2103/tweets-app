@@ -1,23 +1,25 @@
 package com.tweetapp.service.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoUsersFoundException;
 import com.tweetapp.model.AuthResponse;
+import com.tweetapp.model.SecurityUser;
 import com.tweetapp.model.UserToken;
 import com.tweetapp.repository.IUserRepository;
 import com.tweetapp.service.IUserService;
+import com.tweetapp.util.JwtUtil;
 import com.tweetapp.util.TweetUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,44 +38,36 @@ public class UserServiceImpl implements IUserService {
 	private IUserRepository userRepository;
 
 	@Autowired
+	private TweetUtil tweetUtil;
+
+	@Autowired
 	private JwtUtil jwtUtil;
 
 	@Autowired
-	private TweetUtil tweetUtil;
+	@Qualifier("passwordEncoder")
+	private PasswordEncoder passwordEncoder;
 
 	@Override
 	public UserDetails loadUserByUsername(String userName) {
 		UserDoc user = userRepository.findByUsername(userName);
-		return new User(user.getUsername(), user.getPassword(), new ArrayList<>());
+		return user == null ? null : new SecurityUser(user);
 	}
 
 	/**
-	 * method to authenticate the user and generate jwt token
-	 * 
-	 * @throws InvalidUserException
+	 * method to log in an existing user
 	 */
-	public UserToken loginUser(UserDoc user) throws InvalidUserException {
+	@Override
+	public UserToken loginUser(UserDoc userModel) throws InvalidUserException {
 
-		// get the user from the database
-		final UserDetails userDetails = loadUserByUsername(user.getUsername());
+		SecurityUser dbUser = (SecurityUser) loadUserByUsername(userModel.getUsername());
 
-		UserToken userToken = new UserToken();
+		// incase the username is not found or the password does not match
+		if (dbUser == null || !passwordEncoder.matches(userModel.getPassword(), dbUser.getPassword())) {
+			throw new BadCredentialsException(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG);
 
-		// if the password matches
-		if (tweetUtil.comparePasswords(userDetails.getPassword(), user.getPassword())) {
-
-			log.info("password authentication successful");
-
-			// set the values for the token
-			userToken.setUsername(user.getUsername());
-			userToken.setAuthToken(jwtUtil.generateToken(userDetails));
-			return userToken;
-
-		} else {
-
-			log.error("invalid login credentials");
-			throw new InvalidUserException(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG);
 		}
+
+		return jwtUtil.createToken(dbUser.getUser());
 	}
 
 	/**
@@ -87,7 +81,9 @@ public class UserServiceImpl implements IUserService {
 		// validate the user details before saving in database
 		if (tweetUtil.validateUserDetails(user)) {
 			log.info("user info validated successfully");
-			user.setPassword(tweetUtil.encryptPassword(user.getPassword()));
+			
+			//encode the password
+			user.setPassword(passwordEncoder.encode(user.getPassword()));
 			userRepository.save(user);
 		} else {
 			throw new InvalidUserException(TweetConstants.INVALID_USER_DETAILS);
@@ -99,16 +95,16 @@ public class UserServiceImpl implements IUserService {
 	 */
 	@Override
 	public void forgetPasswordUser(String username, String password, String token) throws InvalidTokenException {
-		AuthResponse userValidity = tweetUtil.getValidity(token);
+		
+		String tokenUser = jwtUtil.extractUsername(token);
 
 		// if user is valid then get user details and update the password
-		if (userValidity.isValid() && userValidity.getUsername().equals(username)) {
-			log.info("user identity is valid proceeding with updation of password");
-			UserDoc user = userRepository.findByUsername(username);
-			user.setPassword(tweetUtil.encryptPassword(password));
-			userRepository.save(user);
+		if (tokenUser.equals(username)) {
+			UserDoc dbUser = userRepository.findByUsername(username);
+			dbUser.setPassword(passwordEncoder.encode(password));
+			userRepository.save(dbUser);
 		} else {
-			throw new InvalidTokenException();
+			throw new BadCredentialsException(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG);
 		}
 
 	}
@@ -137,7 +133,7 @@ public class UserServiceImpl implements IUserService {
 	 */
 	@Override
 	public List<UserDoc> getUsersByUsername(String username) throws NoUsersFoundException {
-		String pattern = "*"+username+"*";
+		String pattern = "*" + username + "*";
 		List<UserDoc> users = userRepository.findByUsernameLike(pattern);
 
 		// in case there are no users in the database

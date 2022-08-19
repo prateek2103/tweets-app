@@ -1,6 +1,5 @@
 package com.tweetapp.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -9,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -17,16 +15,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 
-import com.tweetapp.auth.jwt.JwtUtil;
 import com.tweetapp.document.TweetDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidTweetException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoTweetsFoundException;
-import com.tweetapp.model.AuthResponse;
 import com.tweetapp.repository.ITweetRepository;
 import com.tweetapp.service.impl.TweetServiceImpl;
+import com.tweetapp.util.JwtUtil;
 import com.tweetapp.util.TweetUtil;
 
 /**
@@ -55,40 +53,35 @@ class TweetServiceTest {
 	private static final String TEST_USER_2 = "testUser2";
 	private static final String TEST_ID = "testId";
 
-	private List<TweetDoc> tweets = new ArrayList<>();
-
 	/**
 	 * method to test getAllTweets
 	 * 
 	 * @throws InvalidTokenException
+	 * @throws NoTweetsFoundException
 	 */
 	@Test
-	void test_getAllTweets() throws InvalidTokenException {
+	void test_getAllTweetsCallsRepo() throws InvalidTokenException, NoTweetsFoundException {
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
-		when(tweetRepository.findAll()).thenReturn(tweets);
+		when(tweetRepository.findAll()).thenReturn(Arrays.asList(new TweetDoc()));
 
-		List<TweetDoc> actualResult = tweetService.getAllTweets(TEST_TOKEN);
-		List<TweetDoc> expectedResult = tweetRepository.findAll();
+		tweetService.getAllTweets();
 
 		// then
-		assertEquals(expectedResult, actualResult);
+		verify(tweetRepository, times(1)).findAll();
 	}
 
 	/**
 	 * method to test getAllTweets throws exception
-	 * 
-	 * @throws InvalidTokenException
 	 */
 	@Test
-	void test_getAllTweetsThrowsException() throws InvalidTokenException {
+	void test_getAllTweetsThrowsException() {
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, false));
+		when(tweetRepository.findAll()).thenReturn(new ArrayList<>());
 
 		// then
-		assertThrows(InvalidTokenException.class, () -> tweetService.getAllTweets(TEST_TOKEN));
+		assertThrows(NoTweetsFoundException.class, () -> tweetService.getAllTweets());
 	}
 
 	/**
@@ -98,17 +91,15 @@ class TweetServiceTest {
 	 * @throws InvalidTokenException
 	 */
 	@Test
-	void test_getTweetsByUsername() throws NoTweetsFoundException, InvalidTokenException {
-		List<TweetDoc> tweets = new ArrayList<>(Arrays.asList(new TweetDoc()));
+	void test_getTweetsByUsernameCallsRepo() throws NoTweetsFoundException, InvalidTokenException {
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
-		when(tweetRepository.findByHandle(TEST_USER)).thenReturn(tweets);
+		when(tweetRepository.findByHandle(TEST_USER)).thenReturn(Arrays.asList(new TweetDoc()));
 
-		List<TweetDoc> actualTweets = tweetService.getTweetsByUsername(TEST_TOKEN, TEST_USER);
+		tweetService.getTweetsByUsername(TEST_USER);
 
 		// then
-		assertEquals(tweets, actualTweets);
+		verify(tweetRepository, times(1)).findByHandle(TEST_USER);
 
 	}
 
@@ -120,14 +111,11 @@ class TweetServiceTest {
 	 */
 	@Test
 	void test_getTweetsByUsernameThrowsException() throws NoTweetsFoundException, InvalidTokenException {
-		List<TweetDoc> tweets = new ArrayList<>();
-
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
-		when(tweetRepository.findByHandle(TEST_USER)).thenReturn(tweets);
+		when(tweetRepository.findByHandle(TEST_USER)).thenReturn(new ArrayList<>());
 
 		// then
-		assertThrows(NoTweetsFoundException.class, () -> tweetService.getTweetsByUsername(TEST_TOKEN, TEST_USER));
+		assertThrows(NoTweetsFoundException.class, () -> tweetService.getTweetsByUsername(TEST_USER));
 	}
 
 	/**
@@ -144,7 +132,7 @@ class TweetServiceTest {
 		Optional<TweetDoc> tweetRes = Optional.of(tweet);
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetRes);
 
 		tweetService.deleteTweetById(TEST_ID, TEST_USER, TEST_TOKEN);
@@ -164,7 +152,7 @@ class TweetServiceTest {
 		Optional<TweetDoc> tweetRes = Optional.empty();
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetRes);
 
 		// then
@@ -186,27 +174,27 @@ class TweetServiceTest {
 		Optional<TweetDoc> tweetRes = Optional.of(tweet);
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER_2);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetRes);
 
 		// then
-		assertThrows(InvalidTokenException.class, () -> tweetService.deleteTweetById(TEST_ID, TEST_USER_2, TEST_TOKEN));
+		assertThrows(BadCredentialsException.class, () -> tweetService.deleteTweetById(TEST_ID, TEST_USER_2, TEST_TOKEN));
 	}
-
+	
 	/**
-	 * method to test _deleteTweetById throws Invalid token exception for invalid
-	 * token
+	 * method to test _deleteTweetById throws invalid token exception when the api username parameter
+	 * is different than token's username
 	 * 
 	 * @throws InvalidTokenException
 	 */
 	@Test
-	void test_deleteTweetByIdThrowsInvalidExceptionWhenTokenIsInvalid() throws InvalidTokenException {
+	void test_deleteTweetByIdThrowsInvalidExceptionWhenParamUserIsDifferent() throws InvalidTokenException {
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, false));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 
 		// then
-		assertThrows(InvalidTokenException.class, () -> tweetService.deleteTweetById(TEST_ID, TEST_USER, TEST_TOKEN));
+		assertThrows(BadCredentialsException.class, () -> tweetService.deleteTweetById(TEST_ID, TEST_USER_2, TEST_TOKEN));
 	}
 
 	/**
@@ -221,10 +209,11 @@ class TweetServiceTest {
 
 		TweetDoc tweet = new TweetDoc();
 		tweet.setLikesOnTweet(1L);
+		tweet.setHandle(TEST_USER);
 		Optional<TweetDoc> tweetOp = Optional.of(tweet);
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER_2);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		tweetService.likeTweetById(TEST_ID, TEST_USER_2, TEST_TOKEN);
@@ -248,7 +237,7 @@ class TweetServiceTest {
 		Optional<TweetDoc> tweetOp = Optional.empty();
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER_2);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		assertThrows(NoTweetsFoundException.class, () -> tweetService.likeTweetById(TEST_ID, TEST_USER_2, TEST_TOKEN));
@@ -268,10 +257,11 @@ class TweetServiceTest {
 
 		TweetDoc tweet = new TweetDoc();
 		tweet.setLikesOnTweet(1L);
+		tweet.setHandle(TEST_USER);
 		Optional<TweetDoc> tweetOp = Optional.of(tweet);
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		assertThrows(InvalidUserException.class, () -> tweetService.likeTweetById(TEST_ID, TEST_USER, TEST_TOKEN));
@@ -289,9 +279,9 @@ class TweetServiceTest {
 			throws InvalidTokenException, NoTweetsFoundException, InvalidUserException {
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, false));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER_2);
 
-		assertThrows(InvalidTokenException.class, () -> tweetService.likeTweetById(TEST_ID, TEST_USER, TEST_TOKEN));
+		assertThrows(BadCredentialsException.class, () -> tweetService.likeTweetById(TEST_ID, TEST_USER, TEST_TOKEN));
 	}
 
 	/**
@@ -308,9 +298,9 @@ class TweetServiceTest {
 		TweetDoc tweetReply = new TweetDoc();
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, false));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER_2);
 
-		assertThrows(InvalidTokenException.class,
+		assertThrows(BadCredentialsException.class,
 				() -> tweetService.replyTweetById(TEST_ID, TEST_USER, TEST_TOKEN, tweetReply));
 	}
 
@@ -329,36 +319,13 @@ class TweetServiceTest {
 		TweetDoc tweetReply = new TweetDoc();
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		assertThrows(NoTweetsFoundException.class,
 				() -> tweetService.replyTweetById(TEST_ID, TEST_USER, TEST_TOKEN, tweetReply));
 	}
 
-	/**
-	 * test method tweetReplyById throws exception when the username does not match
-	 * the token's
-	 * 
-	 * @throws InvalidTokenException
-	 * @throws NoTweetsFoundException
-	 * @throws InvalidUserException
-	 */
-	@Test
-	void test_replyTweetByIdThrowsInvalidUserException()
-			throws InvalidTokenException, NoTweetsFoundException, InvalidUserException {
-
-		TweetDoc tweet = new TweetDoc();
-		Optional<TweetDoc> tweetOp = Optional.of(tweet);
-		TweetDoc tweetReply = new TweetDoc();
-
-		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER_2, true));
-		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
-
-		assertThrows(InvalidUserException.class,
-				() -> tweetService.replyTweetById(TEST_ID, TEST_USER, TEST_TOKEN, tweetReply));
-	}
 
 	/**
 	 * method to test if replyTweetById throws exception when tweet message length
@@ -374,7 +341,7 @@ class TweetServiceTest {
 		TweetDoc tweetReply = new TweetDoc();
 		tweetReply.setMessage("a".repeat(145));
 
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		// then
@@ -401,7 +368,7 @@ class TweetServiceTest {
 		tweetReply.setMessage("some tweet");
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		tweetService.replyTweetById(TEST_ID, TEST_USER, TEST_TOKEN, tweetReply);
@@ -425,9 +392,9 @@ class TweetServiceTest {
 		TweetDoc updateTweet = new TweetDoc();
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, false));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER_2);
 
-		assertThrows(InvalidTokenException.class,
+		assertThrows(BadCredentialsException.class,
 				() -> tweetService.updateTweetById(TEST_ID, TEST_USER, TEST_TOKEN, updateTweet));
 	}
 
@@ -446,7 +413,7 @@ class TweetServiceTest {
 		TweetDoc updateTweet = new TweetDoc();
 
 		// when
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		assertThrows(NoTweetsFoundException.class,
@@ -469,7 +436,7 @@ class TweetServiceTest {
 		TweetDoc updateTweet = new TweetDoc();
 		updateTweet.setMessage("a".repeat(145));
 
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		// then
@@ -477,28 +444,6 @@ class TweetServiceTest {
 				() -> tweetService.updateTweetById(TEST_ID, TEST_USER, TEST_TOKEN, updateTweet));
 	}
 
-	/**
-	 * test method updateTweetById throws exception on invalid user
-	 * 
-	 * @throws InvalidTokenException
-	 */
-	@Test
-	void test_updateTweetByIdThrowsExceptionOnInvalidUser() throws InvalidTokenException {
-
-		TweetDoc tweet = new TweetDoc();
-		tweet.setHandle(TEST_USER);
-		Optional<TweetDoc> tweetOp = Optional.of(tweet);
-
-		TweetDoc updateTweet = new TweetDoc();
-		updateTweet.setMessage("a".repeat(145));
-
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
-		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
-
-		// then
-		assertThrows(InvalidUserException.class,
-				() -> tweetService.updateTweetById(TEST_ID, TEST_USER_2, TEST_TOKEN, updateTweet));
-	}
 
 	/**
 	 * method to test updateTweetById throws exception on tweet username different
@@ -516,7 +461,7 @@ class TweetServiceTest {
 		TweetDoc updateTweet = new TweetDoc();
 		updateTweet.setMessage("a".repeat(142));
 
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		// then
@@ -543,7 +488,7 @@ class TweetServiceTest {
 		TweetDoc updateTweet = new TweetDoc();
 		updateTweet.setMessage("a".repeat(142));
 
-		when(tweetUtil.getValidity(TEST_TOKEN)).thenReturn(new AuthResponse(TEST_USER, true));
+		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
 
 		tweetService.updateTweetById(TEST_ID, TEST_USER, TEST_TOKEN, updateTweet);
@@ -554,30 +499,32 @@ class TweetServiceTest {
 
 	/**
 	 * method to test addTweet
+	 * 
 	 * @throws InvalidTweetException
 	 */
 	@Test
 	void test_postTweet() throws InvalidTweetException {
 		TweetDoc tweet = new TweetDoc();
 		tweet.setMessage("any message");
-		
-		//when
+
+		// when
 		tweetService.addTweet(tweet);
-		
-		//then
-		verify(tweetRepository,times(1)).save(tweet);
+
+		// then
+		verify(tweetRepository, times(1)).save(tweet);
 	}
-	
+
 	/**
 	 * method to test addTweet throws exception when message limit exceeds
+	 * 
 	 * @throws InvalidTweetException
 	 */
 	@Test
 	void test_postTweetThrowsException() throws InvalidTweetException {
 		TweetDoc tweet = new TweetDoc();
 		tweet.setMessage("a".repeat(145));
-		
-		//assert
-		assertThrows(InvalidTweetException.class,()->tweetService.addTweet(tweet));
+
+		// assert
+		assertThrows(InvalidTweetException.class, () -> tweetService.addTweet(tweet));
 	}
 }
