@@ -1,5 +1,6 @@
 package com.tweetapp.service.impl;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,7 +62,7 @@ public class TweetServiceImpl implements ITweetService {
 		if (tweet.getMessage().length() > 144) {
 			throw new InvalidTweetException(TweetConstants.TWEET_LIMIT_EXCEED);
 		}
-
+		tweet.setCreatedAt(new Date());
 		tweetRepository.save(tweet);
 	}
 
