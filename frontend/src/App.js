@@ -12,8 +12,9 @@ function App() {
   return (
     <>
       <ToastContainer />
-      <Navbar />
+
       <Router>
+        <Navbar />
         <Routes>
           <Route
             exact
@@ -27,7 +28,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/tweets" element={<AllTweets />} />
-          <Route path="/allUsers" element={<AllUsers />} />
+          <Route path="/allUsers/:username" element={<AllUsers />} />
         </Routes>
       </Router>
     </>

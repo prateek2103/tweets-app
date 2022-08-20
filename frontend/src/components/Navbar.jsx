@@ -1,6 +1,17 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useRef } from "react";
+import { Navigate } from "react-router-dom";
+
 function Navbar() {
+  const searchRef = useRef();
+  const navigate = useNavigate();
+
+  const onSearchHandler = () => {
+    console.log("clicked");
+    navigate("/allUsers/" + searchRef.current.value);
+  };
+
   return (
     <div>
       <div class="navbar bg-base-100">
@@ -12,12 +23,21 @@ function Navbar() {
         <div class="flex-none gap-2">
           <div class="form-control">
             <input
+              ref={searchRef}
               type="text"
-              placeholder="search a username"
+              placeholder="search an username"
               class="input input-bordered w-full"
               inline
             />
           </div>
+        </div>
+        <div class="flex-none gap-2 ml-5">
+          <button
+            className="btn btn-primary bg-tweeter-blue"
+            onClick={onSearchHandler}
+          >
+            Search
+          </button>
         </div>
         <div class="flex-none">
           <ul class="menu menu-horizontal px-10">
@@ -25,7 +45,7 @@ function Navbar() {
               <a href="/tweets">Tweets</a>
             </li>
             <li>
-              <a href="/allUsers">All Users</a>
+              <a href="/allUsers/all">All Users</a>
             </li>
             <li>
               <a>Logout</a>

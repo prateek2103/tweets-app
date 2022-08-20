@@ -3,7 +3,7 @@ import { config } from "daisyui";
 import React from "react";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import TweetsByUsername from "./TweetsByUsername";
+
 function AllTweets() {
   const [showReplies, setShowReplies] = useState(true);
   const [reply, setReply] = useState(true);
