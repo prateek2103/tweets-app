@@ -1,7 +1,6 @@
-import React, { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import MyTweets from "./MyTweets";
+import TweetsByUsername from "./TweetsByUsername";
 import axios from "axios";
 function Homepage() {
   const [tweet, setTweet] = useState("");
@@ -159,7 +158,9 @@ function Homepage() {
 
           <div className="mt-[100px]">
             <h1 className="font-thin text-5xl">My tweets</h1>
-            <MyTweets></MyTweets>
+            <TweetsByUsername
+              username={localStorage.getItem("username")}
+            ></TweetsByUsername>
           </div>
         </div>
       </div>
