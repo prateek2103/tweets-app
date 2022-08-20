@@ -2,7 +2,7 @@ import axios from "axios";
 import React from "react";
 import { useState, useEffect } from "react";
 function AllTweets() {
-  const [showReplies, setShowReplies] = useState("collapse-close");
+  const [showReplies, setShowReplies] = useState(true);
   let tweetsList = [];
   const [isLoading, setIsLoading] = useState(true);
   const [tweets, setTweets] = useState([]);
@@ -25,6 +25,23 @@ function AllTweets() {
 
     getTweets();
   }, []);
+
+  const showRepliesHandler = (id) => {
+    const repliesBox = document.getElementById(id);
+    const repliesButton = document.getElementById(id + "showReplies");
+
+    if (showReplies === true) {
+      repliesBox.classList.remove("collapse-close");
+      repliesBox.classList.add("collapse-open");
+      repliesButton.innerText = "hide replies";
+      setShowReplies(false);
+    } else {
+      repliesBox.classList.add("collapse-close");
+      repliesBox.classList.remove("collapse-open");
+      repliesButton.innerText = "show replies";
+      setShowReplies(true);
+    }
+  };
 
   return (
     <div className="container mx-auto">
@@ -60,10 +77,8 @@ function AllTweets() {
                         <div
                           key={tweet.id}
                           tabIndex="0"
-                          className={
-                            "collapse border border-base-300 bg-base-100 rounded-box " +
-                            showReplies
-                          }
+                          className="collapse border border-base-300 bg-base-100 rounded-box"
+                          id={tweet.id}
                         >
                           <div class="collapse-content">
                             {tweet.replies != null &&
@@ -100,11 +115,8 @@ function AllTweets() {
                         </div>
                         <button
                           className="float-right block btn btn-primary bg-tweeter-blue"
-                          onClick={() =>
-                            showReplies === "collapse-open"
-                              ? setShowReplies("collapse-close")
-                              : setShowReplies("collapse-open")
-                          }
+                          id={tweet.id + "showReplies"}
+                          onClick={() => showRepliesHandler(tweet.id)}
                         >
                           show replies
                         </button>
