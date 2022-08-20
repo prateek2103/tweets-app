@@ -1,16 +1,18 @@
 import axios from "axios";
 import React from "react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 function TweetsByUsername({ username }) {
   const [tweets, setTweets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const config = {
+    headers: {
+      Authorization: localStorage.getItem("token"),
+    },
+  };
+
   useEffect(() => {
-    const config = {
-      headers: {
-        Authorization: localStorage.getItem("token"),
-      },
-    };
     axios
       .get("http://localhost:8080/tweets/" + username, config)
       .then((res) => {
@@ -25,6 +27,25 @@ function TweetsByUsername({ username }) {
         setIsLoading(false);
       });
   }, []);
+
+  const onTweetDeleteHandler = (id) => {
+    axios
+      .delete(
+        "http://localhost:8080/tweets/" +
+          localStorage.getItem("username") +
+          "/delete/" +
+          id,
+        config
+      )
+      .then((res) => {
+        let filteredTweets = tweets.filter((tweet) => tweet.id != id);
+        setTweets(filteredTweets);
+        toast.success("toast deleted successfully");
+      })
+      .catch((err) => {
+        toast.error("Please try again later");
+      });
+  };
 
   return (
     <div className="mt-5">
@@ -61,7 +82,12 @@ function TweetsByUsername({ username }) {
 
                           {tweet.handle === localStorage.getItem("username") ? (
                             <>
-                              <button className="btn btn-sm btn-error float-right mt-12">
+                              <button
+                                className="btn btn-sm btn-error float-right mt-12"
+                                onClick={() => {
+                                  onTweetDeleteHandler(tweet.id);
+                                }}
+                              >
                                 delete
                               </button>
                               <button className="btn btn-sm btn-info float-right mt-12 mr-3">
