@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import SignupPage from "./pages/SignupPage";
 import Navbar from "./components/Navbar";
 import AllTweets from "./pages/AllTweets";
+import AllUsers from "./pages/AllUsers";
 function App() {
   return (
     <>
@@ -26,6 +27,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/tweets" element={<AllTweets />} />
+          <Route path="/allUsers" element={<AllUsers />} />
         </Routes>
       </Router>
     </>
