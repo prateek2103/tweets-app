@@ -25,7 +25,7 @@ function Navbar() {
               <a href="/tweets">Tweets</a>
             </li>
             <li>
-              <a>All Users</a>
+              <a href="/allUsers">All Users</a>
             </li>
             <li>
               <a>Logout</a>
