@@ -6,6 +6,8 @@ import { toast } from "react-toastify";
 function TweetsByUsername({ username }) {
   const [tweets, setTweets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const config = {
     headers: {
       Authorization: localStorage.getItem("token"),
@@ -47,6 +49,39 @@ function TweetsByUsername({ username }) {
       });
   };
 
+  const onTweetEditHandler = (id) => {
+    const textBox = document.getElementById(id);
+    const submitButton = document.getElementById(id + "Edit");
+    if (isSubmitting === false) {
+      submitButton.innerText = "submit";
+      textBox.disabled = false;
+      setIsSubmitting(true);
+    } else {
+      const oldValue = textBox.value;
+      setIsSubmitting(false);
+      textBox.disabled = true;
+      submitButton.innerText = "edit";
+
+      //update the tweet
+      axios
+        .put(
+          "http://localhost:8080/tweets/" +
+            localStorage.getItem("username") +
+            "/update/" +
+            id,
+          { message: textBox.value },
+          config
+        )
+        .then((res) => {
+          toast.success("tweet updated successfully");
+        })
+        .catch((err) => {
+          toast.error("Please try again later");
+          textBox.value = oldValue;
+        });
+    }
+  };
+
   return (
     <div className="mt-5">
       {!isLoading && tweets.length > 0 && (
@@ -57,7 +92,7 @@ function TweetsByUsername({ username }) {
                 return (
                   <tr>
                     <td>
-                      <div className="w-full px-5 py-2 grid grid-cols-12">
+                      <div className="w-full px-2 py-2 grid grid-cols-12">
                         <div className="col-span-2">
                           <div class="avatar">
                             <div class="w-24 rounded-full">
@@ -75,10 +110,12 @@ function TweetsByUsername({ username }) {
                           <h1>@{tweet.handle}</h1>
 
                           <textarea
+                            id={tweet.id}
                             class="textarea w-3/4 resize-none mt-2"
-                            value={tweet.message}
-                            disabled
-                          ></textarea>
+                            disabled="true"
+                          >
+                            {tweet.message}
+                          </textarea>
 
                           {tweet.handle === localStorage.getItem("username") ? (
                             <>
@@ -90,7 +127,11 @@ function TweetsByUsername({ username }) {
                               >
                                 delete
                               </button>
-                              <button className="btn btn-sm btn-info float-right mt-12 mr-3">
+                              <button
+                                id={tweet.id + "Edit"}
+                                className="btn btn-sm btn-info float-right mt-12 mr-1"
+                                onClick={() => onTweetEditHandler(tweet.id)}
+                              >
                                 edit
                               </button>
                             </>
