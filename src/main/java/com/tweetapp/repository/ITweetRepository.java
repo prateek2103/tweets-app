@@ -3,6 +3,7 @@ package com.tweetapp.repository;
 import java.util.List;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.tweetapp.document.TweetDoc;
@@ -23,4 +24,7 @@ public interface ITweetRepository extends MongoRepository<TweetDoc, String> {
 	public List<TweetDoc> findByHandle(String handle);
 
 	public void deleteByHandle(String handle);
+
+	@Query("{'isReply':false}")
+	public List<TweetDoc> findAll();
 }
