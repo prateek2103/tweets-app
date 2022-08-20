@@ -83,7 +83,9 @@ function Homepage() {
         <div className="col-span-4 mt-[10%] px-5 text-center">
           <div class="avatar online placeholder">
             <div class="bg-ghost-focus text-black-content border-2 border-black rounded-full w-[250px]">
-              <span class="text-2xl">P</span>
+              <span class="text-2xl">
+                {localStorage.getItem("username").charAt(0).toUpperCase()}
+              </span>
             </div>
           </div>
           {!showForgetForm && (
@@ -94,9 +96,9 @@ function Homepage() {
                   setShowForgetForm(true);
                 }}
               >
-                Forget Password?
+                Forgot Password?
               </button>
-              <span className="text-md">Don't worry. We got you</span>
+              <span className="text-md">Don't worry. We got you!</span>
             </div>
           )}
 

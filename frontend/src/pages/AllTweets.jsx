@@ -96,7 +96,7 @@ function AllTweets() {
                       <div className="col-span-2">
                         <div class="avatar">
                           <div class="w-24 rounded-full">
-                            <img src={tweet.avatarUrl} />
+                            <img src="https://picsum.photos/200/300" />
                           </div>
                         </div>
                       </div>
@@ -128,7 +128,7 @@ function AllTweets() {
                                     <div className="col-span-2">
                                       <div class="avatar">
                                         <div class="w-24 rounded-full">
-                                          <img src={reply.avatarUrl} />
+                                          <img src="https://picsum.photos/200/300" />
                                         </div>
                                       </div>
                                     </div>

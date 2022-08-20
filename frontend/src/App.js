@@ -8,11 +8,11 @@ import SignupPage from "./pages/SignupPage";
 import Navbar from "./components/Navbar";
 import AllTweets from "./pages/AllTweets";
 import AllUsers from "./pages/AllUsers";
+import { Navigate } from "react-router-dom";
 function App() {
   return (
     <>
       <ToastContainer />
-
       <Router>
         <Navbar />
         <Routes>
@@ -27,8 +27,24 @@ function App() {
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/tweets" element={<AllTweets />} />
-          <Route path="/allUsers/:username" element={<AllUsers />} />
+          <Route
+            path="/tweets"
+            element={
+              <RouteGuard>
+                <AllTweets />
+              </RouteGuard>
+            }
+          />
+          <Route
+            path="/allUsers/:username"
+            element={
+              <RouteGuard>
+                <AllUsers />
+              </RouteGuard>
+            }
+          />
+
+          <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
     </>
