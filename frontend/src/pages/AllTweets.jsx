@@ -1,18 +1,21 @@
 import axios from "axios";
+import { config } from "daisyui";
 import React from "react";
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import TweetsByUsername from "./TweetsByUsername";
 function AllTweets() {
   const [showReplies, setShowReplies] = useState(true);
-  let tweetsList = [];
+  const [reply, setReply] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [tweets, setTweets] = useState([]);
 
+  const config = {
+    headers: { Authorization: localStorage.getItem("token") },
+  };
+
   useEffect(() => {
     const getTweets = async () => {
-      const config = {
-        headers: { Authorization: localStorage.getItem("token") },
-      };
-
       try {
         const res = await axios.get("http://localhost:8080/tweets/all", config);
         setTweets(res.data);
@@ -25,6 +28,43 @@ function AllTweets() {
 
     getTweets();
   }, []);
+
+  const tweetReplyHandler = (id) => {
+    const replyBox = document.getElementById(id + "replyBox");
+    const replyButton = document.getElementById(id + "reply");
+
+    if (reply === true) {
+      replyBox.classList.remove("hidden");
+      replyBox.classList.add("block");
+      replyButton.innerText = "Submit";
+      setReply(false);
+    } else {
+      // post request
+      axios
+        .post(
+          "http://localhost:8080/tweets/" +
+            localStorage.getItem("username") +
+            "/reply/" +
+            id,
+          {
+            message: replyBox.children[0].value,
+            handle: localStorage.getItem("username"),
+            createdAt: new Date(),
+          },
+          config
+        )
+        .then((res) => {
+          replyBox.classList.add("hidden");
+          replyBox.classList.remove("block");
+          replyButton.innerText = "reply";
+          setReply(true);
+          toast.success("replied to a tweet sucessfully");
+        })
+        .catch((err) => {
+          toast.error("Please try again later");
+        });
+    }
+  };
 
   const showRepliesHandler = (id) => {
     const repliesBox = document.getElementById(id);
@@ -113,6 +153,13 @@ function AllTweets() {
                               })}
                           </div>
                         </div>
+                        <div id={tweet.id + "replyBox"} className="hidden">
+                          <textarea
+                            class="textarea w-full resize-none border-2 border-gray-300 "
+                            placeholder="What's do you think?"
+                            maxLength="144"
+                          ></textarea>
+                        </div>
                         <button
                           className="float-right block btn btn-primary bg-tweeter-blue"
                           id={tweet.id + "showReplies"}
@@ -121,7 +168,11 @@ function AllTweets() {
                           show replies
                         </button>
 
-                        <button className="float-right block btn btn-primary bg-tweeter-blue mr-5">
+                        <button
+                          className="float-right block btn btn-primary bg-tweeter-blue mr-5"
+                          id={tweet.id + "reply"}
+                          onClick={() => tweetReplyHandler(tweet.id)}
+                        >
                           reply
                         </button>
                       </div>
@@ -131,53 +182,6 @@ function AllTweets() {
               );
             })}
           {isLoading && <button class="btn btn-primary">Processing...</button>}
-          <tr>
-            <td>
-              <div className="w-full px-5 py-2 grid grid-cols-12">
-                <div className="col-span-2">
-                  <div class="avatar">
-                    <div class="w-24 rounded-full">
-                      <img src="https://placeimg.com/192/192/people" />
-                    </div>
-                  </div>
-                </div>
-                <div className="col-span-8">
-                  <span className="float-right block">3 hrs ago</span>
-                  <h1>@UserHandle</h1>
-
-                  <textarea
-                    class="textarea w-full resize-none mt-2"
-                    value="this is my first tweet"
-                    disabled
-                  ></textarea>
-                  <div
-                    tabIndex="0"
-                    className={
-                      "collapse border border-base-300 bg-base-100 rounded-box " +
-                      showReplies
-                    }
-                  >
-                    <div class="collapse-content">
-                      <p>Replies</p>
-                    </div>
-                  </div>
-                  <button
-                    className="float-right block btn btn-primary bg-tweeter-blue"
-                    onClick={() =>
-                      showReplies === "collapse-open"
-                        ? setShowReplies("collapse-close")
-                        : setShowReplies("collapse-open")
-                    }
-                  >
-                    show replies
-                  </button>
-                  <button className="float-right block btn btn-primary bg-tweeter-blue mr-5">
-                    reply
-                  </button>
-                </div>
-              </div>
-            </td>
-          </tr>
         </tbody>
       </table>
     </div>

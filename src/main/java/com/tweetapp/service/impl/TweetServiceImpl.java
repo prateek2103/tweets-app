@@ -1,5 +1,6 @@
 package com.tweetapp.service.impl;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -179,8 +180,16 @@ public class TweetServiceImpl implements ITweetService {
 			// else
 			TweetDoc realTweet = tweetOp.get();
 			List<TweetDoc> replies = realTweet.getReplies();
+			
+			if(replies==null) {
+				replies = new ArrayList<>(); 
+			}
+			
+			tweetReply.setReply(true);
+			tweetReply.setHandle(username);
 			replies.add(tweetReply);
-
+			realTweet.setReplies(replies);
+			
 			// save the reply
 			tweetRepository.save(tweetReply);
 
