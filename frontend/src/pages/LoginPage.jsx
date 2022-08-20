@@ -26,7 +26,7 @@ function LoginPage() {
             <span className="text-xl block">New here? No worries</span>
             <Link
               className="text-xl text-tweeter-blue hover:font-bold"
-              to="/register"
+              to="/signup"
             >
               Sign up
             </Link>
