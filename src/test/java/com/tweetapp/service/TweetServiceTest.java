@@ -18,11 +18,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import com.tweetapp.document.TweetDoc;
+import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidTweetException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoTweetsFoundException;
 import com.tweetapp.repository.ITweetRepository;
+import com.tweetapp.repository.IUserRepository;
 import com.tweetapp.service.impl.TweetServiceImpl;
 import com.tweetapp.util.JwtUtil;
 import com.tweetapp.util.TweetUtil;
@@ -45,6 +47,9 @@ class TweetServiceTest {
 	@Mock
 	private TweetUtil tweetUtil;
 
+	@Mock 
+	private IUserRepository userRepository;
+	
 	@InjectMocks
 	private TweetServiceImpl tweetService;
 
@@ -370,6 +375,7 @@ class TweetServiceTest {
 		// when
 		when(jwtUtil.extractUsername(TEST_TOKEN)).thenReturn(TEST_USER);
 		when(tweetRepository.findById(TEST_ID)).thenReturn(tweetOp);
+		when(userRepository.findByUsername(any(String.class))).thenReturn(new UserDoc());
 
 		tweetService.replyTweetById(TEST_ID, TEST_USER, TEST_TOKEN, tweetReply);
 

@@ -34,15 +34,12 @@ public class JwtUtil {
 	 */
 	public UserToken createToken(UserDoc user) {
 
-		// signature key
-		SecretKey key = Keys.hmacShaKeyFor(TweetConstants.JWT_KEY.getBytes(StandardCharsets.UTF_8));
-
 		// create token
 		String jwtToken = Jwts.builder().claim(TweetConstants.USERNAME_CLAIM, user.getUsername())
-				.setIssuedAt(new Date()).setExpiration(new Date((new Date()).getTime() + 300000000)).signWith(key)
+				.setIssuedAt(new Date()).setExpiration(new Date((new Date()).getTime() + 5*60000)).signWith(SECRET_KEY)
 				.compact();
 
-		return new UserToken(user.getUsername(), jwtToken);
+		return new UserToken(user.getUsername(), user.getAvatarUrl(), jwtToken);
 	}
 
 	/**
@@ -52,7 +49,8 @@ public class JwtUtil {
 	 * @return
 	 */
 	public boolean isValidToken(String token) {
-		Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token).getBody();
+		String pureTokeString = token.substring(6);
+		Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(pureTokeString).getBody();
 		return true;
 	}
 
@@ -62,10 +60,11 @@ public class JwtUtil {
 	 * @return
 	 */
 	public String extractUsername(String token) {
+		String pureTokenString = token.substring(6);
 		return (String)Jwts.parserBuilder()
 				   .setSigningKey(SECRET_KEY)
 				   .build()
-				   .parseClaimsJws(token)
+				   .parseClaimsJws(pureTokenString)
 				   .getBody()
 				   .get(TweetConstants.USERNAME_CLAIM);
 	}

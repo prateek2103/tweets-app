@@ -1,5 +1,6 @@
 package com.tweetapp.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -21,11 +22,11 @@ public class SecurityUser implements UserDetails{
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private UserDoc user;
+	private transient UserDoc user;
 	
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return null;
+		return new ArrayList<>();
 	}
 
 	@Override

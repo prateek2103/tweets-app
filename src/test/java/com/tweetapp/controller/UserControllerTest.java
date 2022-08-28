@@ -129,7 +129,7 @@ class UserControllerTest {
 	 */
 	@Test
 	void test_forgetPasswordValidUser() throws IOException, Exception {
-		String uri = String.format("/%s/forgetPassword", testUser.getUsername());
+		String uri = String.format("/%s/forgot", testUser.getUsername());
 
 		String tokenString = testUtil.getAuthToken();
 
@@ -154,7 +154,7 @@ class UserControllerTest {
 	 */
 	@Test
 	void test_forgetPasswordInvalidToken() throws IOException, Exception {
-		String uri = String.format("/%s/forgetPassword", testUser.getUsername());
+		String uri = String.format("/%s/forgot", testUser.getUsername());
 
 		// call the rest api
 		mockMvc.perform(post(uri).contentType(MediaType.APPLICATION_JSON).content(TEST_PASSWORD).header(AUTH_HEADER,

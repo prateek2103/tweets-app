@@ -43,10 +43,10 @@ public class TweetDoc {
 	private String avatarUrl;
 	
 	@Field(name="likes")
-	private Long likesOnTweet;
+	private Long likesOnTweet = 0L;
 	
-	private boolean isReply;
+	private boolean isReply = false;
 	
-	@DBRef
+	@DBRef(lazy = true)
 	private List<TweetDoc> replies;
 }

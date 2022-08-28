@@ -151,7 +151,7 @@ class TweetControllerTest {
 
 		// send the api request
 		String resp = mockMvc
-				.perform(get("/tweets/all").header("Authorization", fullToken).contentType(MediaType.APPLICATION_JSON))
+				.perform(get("/all").header("Authorization", fullToken).contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
 		// map the response
@@ -172,7 +172,7 @@ class TweetControllerTest {
 
 		// send the api request
 		mockMvc.perform(
-				get("/api/v1.0/tweets/all").header("Authorization", TEST_TOKEN).contentType(MediaType.APPLICATION_JSON))
+				get("/all").header("Authorization", TEST_TOKEN).contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isUnauthorized());
 	}
 
@@ -191,7 +191,7 @@ class TweetControllerTest {
 
 		// send the api request
 		String resp = mockMvc
-				.perform(get("/tweets/" + TEST_USER).header("Authorization", fullToken)
+				.perform(get("/" + TEST_USER).header("Authorization", fullToken)
 						.contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
@@ -215,7 +215,7 @@ class TweetControllerTest {
 		String fullToken = testUtil.getAuthToken();
 
 		// send the api request
-		mockMvc.perform(get("/tweets/" + TEST_USER_NOT_EXISTS).header("Authorization", fullToken)
+		mockMvc.perform(get("/" + TEST_USER_NOT_EXISTS).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.TWEETS_NOT_FOUND_MESSAGE)));
 
@@ -229,7 +229,7 @@ class TweetControllerTest {
 	@Test
 	void test_getTweetsByUsernameThrowsExceptionOnInvalidToken() throws Exception {
 		// send the api request
-		mockMvc.perform(get("/tweets/" + TEST_USER_NOT_EXISTS).header("Authorization", TEST_TOKEN)
+		mockMvc.perform(get("/" + TEST_USER_NOT_EXISTS).header("Authorization", TEST_TOKEN)
 				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isUnauthorized());
 	}
 
@@ -242,7 +242,7 @@ class TweetControllerTest {
 	void test_deleteTweetById() throws Exception {
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(delete("/tweets/" + TEST_USER + "/delete/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(delete("/" + TEST_USER + "/delete/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
 
 		// assert
@@ -260,7 +260,7 @@ class TweetControllerTest {
 	void test_deleteTweetByIdThrowsExceptionTweetNotExists() throws Exception {
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(delete("/tweets/" + TEST_USER + "/delete/" + 123).header("Authorization", fullToken)
+		mockMvc.perform(delete("/" + TEST_USER + "/delete/" + 123).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isNotFound())
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof NoTweetsFoundException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.TWEET_NOT_EXIST_MSG)));
@@ -276,7 +276,7 @@ class TweetControllerTest {
 	void test_deleteTweetByIdThrowsExceptionWhenTweetUserisDifferent() throws Exception {
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(delete("/tweets/" + TEST_USER_2 + "/delete/" + testId)
+		mockMvc.perform(delete("/" + TEST_USER_2 + "/delete/" + testId)
 				.header("Authorization", fullToken).contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isUnauthorized());
 	}
@@ -289,7 +289,7 @@ class TweetControllerTest {
 	@Test
 	void test_deleteTweetByIdThrowsExceptionOnInvalidToken() throws Exception {
 
-		mockMvc.perform(delete("/tweets/" + TEST_USER + "/delete/" + testId)
+		mockMvc.perform(delete("/" + TEST_USER + "/delete/" + testId)
 				.header("Authorization", TEST_TOKEN).contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isUnauthorized());
 	}
@@ -305,7 +305,7 @@ class TweetControllerTest {
 	void test_likeTweetById() throws UnsupportedEncodingException, IOException, Exception {
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/like/" + testId2).header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER + "/like/" + testId2).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
 
 		// assert
@@ -322,7 +322,7 @@ class TweetControllerTest {
 	@Test
 	void test_likeTweetByIdOnInvalidToken() throws Exception {
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/like/" + testId).header("Authorization", TEST_TOKEN)
+		mockMvc.perform(post("/" + TEST_USER + "/like/" + testId).header("Authorization", TEST_TOKEN)
 				.contentType(MediaType.APPLICATION_JSON)).andExpect(status().isUnauthorized());
 		}
 
@@ -339,7 +339,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/like/" + 123).header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER + "/like/" + 123).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof NoTweetsFoundException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.TWEET_NOT_EXIST_MSG)));
@@ -359,7 +359,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/like/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER + "/like/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.USER_NOT_LIKE_MSG)));
@@ -379,7 +379,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/reply/" + 123).header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER + "/reply/" + 123).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof NoTweetsFoundException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.TWEET_NOT_EXIST_MSG)));
@@ -400,7 +400,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER_2 + "/reply/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER_2 + "/reply/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof BadCredentialsException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG)));
@@ -418,8 +418,8 @@ class TweetControllerTest {
 	void test_replyTweetByIdThrowsExceptionWhenInvalidToken()
 			throws UnsupportedEncodingException, IOException, Exception {
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/reply/" + 123).header("Authorization", TEST_TOKEN)
-				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()));
+		mockMvc.perform(post("/" + TEST_USER + "/reply/" + 123).header("Authorization", TEST_TOKEN)
+				.contentType(MediaType.APPLICATION_JSON).content(replyTweet())).andExpect(status().isUnauthorized());
 
 	}
 
@@ -436,7 +436,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/reply/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER + "/reply/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(invalidReplyTweet()))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidTweetException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.TWEET_LIMIT_EXCEED)));
@@ -455,7 +455,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/reply/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER + "/reply/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(replyTweet())).andExpect(status().isOk());
 
 		// assert
@@ -477,7 +477,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(put("/tweets/" + TEST_USER + "/update/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(put("/" + TEST_USER + "/update/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(invalidReplyTweet()))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidTweetException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.TWEET_LIMIT_EXCEED)));
@@ -495,8 +495,8 @@ class TweetControllerTest {
 	void test_updateTweetByIdThrowsExceptionWhenInvalidToken()
 			throws UnsupportedEncodingException, IOException, Exception {
 
-		mockMvc.perform(put("/tweets/" + TEST_USER + "/update/" + 123).header("Authorization", TEST_TOKEN)
-				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()));
+		mockMvc.perform(put("/" + TEST_USER + "/update/" + 123).header("Authorization", TEST_TOKEN)
+				.contentType(MediaType.APPLICATION_JSON).content(replyTweet())).andExpect(status().isUnauthorized());
 
 	}
 
@@ -513,7 +513,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(put("/tweets/" + TEST_USER_2 + "/update/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(put("/" + TEST_USER_2 + "/update/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof BadCredentialsException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG)));
@@ -533,7 +533,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(put("/tweets/" + TEST_USER + "/update/" + testId2).header("Authorization", fullToken)
+		mockMvc.perform(put("/" + TEST_USER + "/update/" + testId2).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUserException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.INVALID_USER_DETAILS)));
@@ -552,7 +552,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(put("/tweets/" + TEST_USER + "/update/" + testId).header("Authorization", fullToken)
+		mockMvc.perform(put("/" + TEST_USER + "/update/" + testId).header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(updateTweet())).andExpect(status().isOk());
 
 		// assert
@@ -570,8 +570,8 @@ class TweetControllerTest {
 	void test_postTweet() throws IOException, Exception {
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/add").header("Authorization", fullToken)
-				.contentType(MediaType.APPLICATION_JSON).content(replyTweet())).andExpect(status().isCreated());
+		mockMvc.perform(post("/" + TEST_USER + "/add").header("Authorization", fullToken)
+				.contentType(MediaType.APPLICATION_JSON).content(postTweet())).andExpect(status().isCreated());
 
 	}
 
@@ -585,8 +585,8 @@ class TweetControllerTest {
 	@Test
 	void test_postTweetThrowsExceptionWhenInvalidToken() throws UnsupportedEncodingException, IOException, Exception {
 
-		mockMvc.perform(post("/tweets/" + TEST_USER + "/add").header("Authorization", TEST_TOKEN)
-				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()));
+		mockMvc.perform(post("/" + TEST_USER + "/add").header("Authorization", TEST_TOKEN)
+				.contentType(MediaType.APPLICATION_JSON).content(replyTweet())).andExpect(status().isUnauthorized());
 
 	}
 
@@ -603,7 +603,7 @@ class TweetControllerTest {
 
 		String fullToken = testUtil.getAuthToken();
 
-		mockMvc.perform(post("/tweets/" + TEST_USER_2 + "/add").header("Authorization", fullToken)
+		mockMvc.perform(post("/" + TEST_USER_2 + "/add").header("Authorization", fullToken)
 				.contentType(MediaType.APPLICATION_JSON).content(replyTweet()))
 				.andExpect(result -> assertTrue(result.getResolvedException() instanceof BadCredentialsException))
 				.andExpect(jsonPath("$.errorMessage", is(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG)));
@@ -639,6 +639,11 @@ class TweetControllerTest {
 
 	private String updateTweet() throws IOException {
 		return FileUtils.readFileToString(new File(BASE_PATH + "updateTweetValid.json").getAbsoluteFile(), "UTF-8");
+
+	}
+	
+	private String postTweet() throws IOException {
+		return FileUtils.readFileToString(new File(BASE_PATH + "validPostTweetRequest.json").getAbsoluteFile(), "UTF-8");
 
 	}
 

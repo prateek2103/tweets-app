@@ -31,6 +31,8 @@ public class UserDoc {
 	
 	private String lastName;
 	
+	private String avatarUrl;
+	
 	@NonNull
 	@Indexed(unique=true)
 	private String email;

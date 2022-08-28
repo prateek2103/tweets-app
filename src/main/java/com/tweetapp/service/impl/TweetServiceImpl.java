@@ -1,7 +1,6 @@
 package com.tweetapp.service.impl;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,11 +10,13 @@ import org.springframework.stereotype.Service;
 
 import com.tweetapp.constants.TweetConstants;
 import com.tweetapp.document.TweetDoc;
+import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidTweetException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoTweetsFoundException;
 import com.tweetapp.repository.ITweetRepository;
+import com.tweetapp.repository.IUserRepository;
 import com.tweetapp.service.ITweetService;
 import com.tweetapp.util.JwtUtil;
 
@@ -30,9 +31,12 @@ public class TweetServiceImpl implements ITweetService {
 
 	@Autowired
 	private ITweetRepository tweetRepository;
-	
+
 	@Autowired
 	private JwtUtil jwtUtil;
+
+	@Autowired
+	private IUserRepository userRepository;
 
 	/**
 	 * method to retrieve all tweets by username
@@ -63,7 +67,8 @@ public class TweetServiceImpl implements ITweetService {
 		if (tweet.getMessage().length() > 144) {
 			throw new InvalidTweetException(TweetConstants.TWEET_LIMIT_EXCEED);
 		}
-		tweet.setCreatedAt(new Date());
+		UserDoc userDoc = userRepository.findByUsername(tweet.getHandle());
+		tweet.setAvatarUrl(userDoc == null ? null : userDoc.getAvatarUrl());
 		tweetRepository.save(tweet);
 	}
 
@@ -71,12 +76,12 @@ public class TweetServiceImpl implements ITweetService {
 	 * task-2 method to get all tweets
 	 * 
 	 * @throws InvalidTokenException
-	 * @throws NoTweetsFoundException 
+	 * @throws NoTweetsFoundException
 	 */
 	@Override
 	public List<TweetDoc> getAllTweets() throws InvalidTokenException, NoTweetsFoundException {
 		List<TweetDoc> tweets = tweetRepository.findAll();
-		
+
 		if (tweets.isEmpty()) {
 			throw new NoTweetsFoundException(TweetConstants.TWEETS_NOT_FOUND_MESSAGE);
 		}
@@ -93,7 +98,7 @@ public class TweetServiceImpl implements ITweetService {
 	@Override
 	public void deleteTweetById(String id, String username, String authToken)
 			throws InvalidTokenException, NoTweetsFoundException {
-		
+
 		String tokenUsername = jwtUtil.extractUsername(authToken);
 
 		if (tokenUsername.equals(username)) {
@@ -104,16 +109,15 @@ public class TweetServiceImpl implements ITweetService {
 			// if tweet does not exist
 			if (!tweet.isPresent()) {
 				throw new NoTweetsFoundException(TweetConstants.TWEET_NOT_EXIST_MSG);
-			} 
-			
-			if(!tweet.get().getHandle().equals(tokenUsername)) {
+			}
+
+			if (!tweet.get().getHandle().equals(tokenUsername)) {
 				throw new BadCredentialsException(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG);
 			}
-			
+
 			tweetRepository.delete(tweet.get());
 
-		}
-		else {
+		} else {
 			throw new BadCredentialsException(TweetConstants.UNAUTHORIZED_USER_ACCESS_MSG);
 		}
 
@@ -122,11 +126,11 @@ public class TweetServiceImpl implements ITweetService {
 	@Override
 	public void likeTweetById(String id, String username, String token)
 			throws NoTweetsFoundException, InvalidUserException, InvalidTokenException {
-		
+
 		String tokenUsername = jwtUtil.extractUsername(token);
 
 		if (tokenUsername.equals(username)) {
-			
+
 			Optional<TweetDoc> tweet = tweetRepository.findById(id);
 
 			// if tweet does not exist
@@ -180,16 +184,17 @@ public class TweetServiceImpl implements ITweetService {
 			// else
 			TweetDoc realTweet = tweetOp.get();
 			List<TweetDoc> replies = realTweet.getReplies();
-			
-			if(replies==null) {
-				replies = new ArrayList<>(); 
+
+			if (replies == null) {
+				replies = new ArrayList<>();
 			}
-			
+
 			tweetReply.setReply(true);
 			tweetReply.setHandle(username);
+			tweetReply.setAvatarUrl(userRepository.findByUsername(username).getAvatarUrl());
 			replies.add(tweetReply);
 			realTweet.setReplies(replies);
-			
+
 			// save the reply
 			tweetRepository.save(tweetReply);
 
