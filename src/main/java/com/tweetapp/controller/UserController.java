@@ -23,7 +23,10 @@ import com.tweetapp.model.UserToken;
 import com.tweetapp.service.IUserService;
 import com.tweetapp.util.TweetUtil;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
+@Tag(name="user services",description = "api endpoints for user related services")
 public class UserController {
 
 	@Autowired
@@ -73,7 +76,7 @@ public class UserController {
 	 * @throws InvalidTokenException
 	 * @throws InvalidUserException
 	 */
-	@PostMapping("/{username}/forgetPassword")
+	@PostMapping("/{username}/forgot")
 	public ResponseEntity<String> updateForgottonPassword(@PathVariable("username") String username,
 			@RequestHeader("Authorization") String token, @RequestBody String password)
 			throws InvalidTokenException, InvalidUserException {

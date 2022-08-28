@@ -99,7 +99,7 @@ public class TestUtil {
 
 		LoginResponse userData = objectMapper.readValue(response, LoginResponse.class);
 
-		return userData.getAuthToken();
+		return "Bearer " + userData.getAuthToken();
 
 	}
 }

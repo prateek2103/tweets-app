@@ -14,7 +14,6 @@ import com.tweetapp.document.UserDoc;
 import com.tweetapp.exception.InvalidTokenException;
 import com.tweetapp.exception.InvalidUserException;
 import com.tweetapp.exception.NoUsersFoundException;
-import com.tweetapp.model.AuthResponse;
 import com.tweetapp.model.SecurityUser;
 import com.tweetapp.model.UserToken;
 import com.tweetapp.repository.IUserRepository;

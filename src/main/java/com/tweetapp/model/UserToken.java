@@ -15,5 +15,6 @@ import lombok.NoArgsConstructor;
 public class UserToken {
 
 	private String username;
+	private String avatarUrl;
 	private String authToken;
 }

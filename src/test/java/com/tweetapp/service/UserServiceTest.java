@@ -55,6 +55,7 @@ class UserServiceTest {
 	private static final String TEST_USER_2 = "testUser2";
 	private static final String TEST_PASS = "test@123";
 	private static final String TEST_TOKEN = "token123";
+	private static final String TEST_AVATAR_URL = "testUrl";
 
 	@BeforeEach
 	public void setup() {
@@ -74,7 +75,7 @@ class UserServiceTest {
 		// when
 		when(userRepo.findByUsername(any(String.class))).thenReturn(testUser);
 		when(passwordEncoder.matches(any(String.class), any(String.class))).thenReturn(true);
-		when(jwtUtil.createToken(any(UserDoc.class))).thenReturn(new UserToken(TEST_USER, TEST_TOKEN));
+		when(jwtUtil.createToken(any(UserDoc.class))).thenReturn(new UserToken(TEST_USER, TEST_AVATAR_URL,TEST_TOKEN));
 
 		UserToken token = userService.loginUser(testUser);
 

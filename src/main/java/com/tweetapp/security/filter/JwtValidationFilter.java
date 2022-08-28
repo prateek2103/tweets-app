@@ -17,6 +17,7 @@ import com.tweetapp.util.JwtUtil;
 
 /**
  * validation filter before each authenticated request
+ * 
  * @author prateekpurohit
  *
  */
@@ -25,12 +26,12 @@ public class JwtValidationFilter extends OncePerRequestFilter {
 
 	@Autowired
 	private JwtUtil jwtUtil;
-	
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 
-		//retrieve the token
+		// retrieve the token
 		String jwtTokenString = request.getHeader(TweetConstants.JWT_HEADER);
 
 		if (null != jwtTokenString) {
@@ -39,16 +40,21 @@ public class JwtValidationFilter extends OncePerRequestFilter {
 			} catch (Exception e) {
 				throw new BadCredentialsException(TweetConstants.INVALID_TOKEN_MSG);
 			}
-		}else {
+		} else {
 			throw new BadCredentialsException(TweetConstants.TOKEN_NOT_PASSED_MSG);
 		}
-		
+
 		filterChain.doFilter(request, response);
 	}
 
-	//avoid this filter for login rest api call
+	// avoid this filter for login rest api call
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) {
-		return request.getRequestURI().equals("/login") || request.getRequestURI().equals("/register");
+		return request.getRequestURI().equals("/api/v1.0/tweets/login")
+				|| request.getRequestURI().equals("/api/v1.0/tweets/register")
+				|| request.getRequestURI().startsWith("/api/v1.0/tweets/swagger-ui")
+				|| request.getRequestURI().startsWith("/api/v1.0/tweets/v3/api-docs")
+				|| request.getRequestURI().equals("/login")
+				|| request.getRequestURI().equals("/register");
 	}
 }

@@ -7,14 +7,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * TweetsApp Configuration
+ * 
  * @author prateekpurohit
  *
  */
 @Configuration
+//@EnableSwagger2
 public class TweetsConfig {
 
 	@Bean("passwordEncoder")
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
+
 }

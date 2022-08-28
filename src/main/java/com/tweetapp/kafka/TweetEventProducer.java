@@ -40,12 +40,12 @@ public class TweetEventProducer {
 
 			@Override
 			public void onSuccess(SendResult<String, String> result) {
-				log.error("sending tweet to kafka failed");
+				log.error("tweet sent to kafka topic successfully");
 			}
 
 			@Override
 			public void onFailure(Throwable ex) {
-				log.info("tweet sent to kafka topic successfully");
+				log.info("sending tweet to kafka failed");
 
 			}
 
