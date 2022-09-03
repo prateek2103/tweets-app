@@ -8,7 +8,7 @@ function SignupPage() {
           <div className="bg-black hero min-h-screen ">
             <div className="hero-content">
               <h1 className="px-2 text-[7rem] text-white font-thin">
-                Weclome Aboard{" "}
+                Welcome Aboard{" "}
               </h1>
             </div>
           </div>

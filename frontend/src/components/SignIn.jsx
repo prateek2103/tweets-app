@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import { loginUser } from "../context/tweetsAction";
 
 function SignIn() {
   const userRef = useRef();
@@ -14,28 +15,29 @@ function SignIn() {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
-    let reqBody = {
-      username: userRef.current.value,
-      password: passRef.current.value,
-    };
+    //extract the username and password from the form
+    let username = userRef.current.value;
+    let password = passRef.current.value;
 
-    let res = await axios
-      .post("http://localhost:8080/login", reqBody)
+    //http request to server
+    loginUser(username, password)
       .then((res) => {
-        let { authToken, username } = res.data;
+        let { authToken, username, avatarUrl } = res.data;
+
+        //store token and username in localStorage for later use
         localStorage.setItem("token", authToken);
         localStorage.setItem("username", username);
+        localStorage.setItem("avatarUrl", avatarUrl);
 
-        toast.success("logged in successfully", {
-          position: toast.POSITION.TOP_RIGHT,
-        });
+        //success message
+        toast.success(process.env.REACT_APP_SUCCESS_LOGIN_MSG);
       })
       .then((res) => {
+        //navigate to home page on successful login
         navigate("/");
       })
       .catch((err) => {
-        console.log(err);
-        let errorMessage;
+        let errorMessage = "";
         let errorResponse = err.response;
 
         if (errorResponse.status === 401) {
@@ -44,12 +46,12 @@ function SignIn() {
           errorMessage = "Server error. Please try again later.";
         }
 
-        toast.error(errorMessage, {
-          position: toast.POSITION.TOP_RIGHT,
-        });
+        //error message
+        toast.error(errorMessage);
+      })
+      .finally(() => {
+        formRef.current.reset();
       });
-
-    formRef.current.reset();
   };
 
   return (
@@ -80,8 +82,6 @@ function SignIn() {
           <ArrowForwardOutlined />
         </button>
       </form>
-
-      <ToastContainer />
     </div>
   );
 }

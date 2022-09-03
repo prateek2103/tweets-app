@@ -34,7 +34,6 @@ public class TweetDoc {
 	private String message;
 	
 	@Field(name="creat_tm")
-	@NonNull
 	private Date createdAt;
 	
 	@NonNull

@@ -3,6 +3,7 @@ import { config } from "daisyui";
 import React from "react";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { getAllTweets, replyTweet, likeTweet } from "../context/tweetsAction";
 
 function AllTweets() {
   const [showReplies, setShowReplies] = useState(true);
@@ -10,55 +11,41 @@ function AllTweets() {
   const [isLoading, setIsLoading] = useState(true);
   const [tweets, setTweets] = useState([]);
 
-  const config = {
-    headers: { Authorization: localStorage.getItem("token") },
-  };
-
   useEffect(() => {
-    const getTweets = async () => {
-      try {
-        const res = await axios.get("http://localhost:8080/tweets/all", config);
+    //get all tweets
+    getAllTweets()
+      .then((res) => {
         setTweets(res.data);
-        console.log(res.data);
-        setIsLoading(false);
-      } catch (error) {
-        console.log(error);
-      }
-    };
+      })
+      .catch((err) => {
+        toast.error("Server error.Please try again later");
+      });
 
-    getTweets();
+    setIsLoading(false);
   }, []);
 
+  //tweets reply handler
   const tweetReplyHandler = (id) => {
     const replyBox = document.getElementById(id + "replyBox");
     const replyButton = document.getElementById(id + "reply");
 
+    //toggle between reply and submit by user actions
     if (reply === true) {
       replyBox.classList.remove("hidden");
       replyBox.classList.add("block");
       replyButton.innerText = "Submit";
       setReply(false);
     } else {
-      // post request
-      axios
-        .post(
-          "http://localhost:8080/tweets/" +
-            localStorage.getItem("username") +
-            "/reply/" +
-            id,
-          {
-            message: replyBox.children[0].value,
-            handle: localStorage.getItem("username"),
-            createdAt: new Date(),
-          },
-          config
-        )
+      let replyMessage = replyBox.children[0].value;
+
+      //http request
+      replyTweet(id, replyMessage)
         .then((res) => {
           replyBox.classList.add("hidden");
           replyBox.classList.remove("block");
           replyButton.innerText = "reply";
           setReply(true);
-          toast.success("replied to a tweet sucessfully");
+          toast.success("replied to the tweet sucessfully");
         })
         .catch((err) => {
           toast.error("Please try again later");
@@ -66,6 +53,21 @@ function AllTweets() {
     }
   };
 
+  //like handler
+  const onLikeHandler = (id) => {
+    let likes = document.getElementById(id + "likeValue");
+
+    //http request
+    likeTweet(id)
+      .then((res) => {
+        toast.success("tweet liked successfully");
+      })
+      .catch((err) => {
+        toast.error("server error. please try again later");
+      });
+  };
+
+  //show replies toggler
   const showRepliesHandler = (id) => {
     const repliesBox = document.getElementById(id);
     const repliesButton = document.getElementById(id + "showReplies");
@@ -83,6 +85,24 @@ function AllTweets() {
     }
   };
 
+  //method to retrieve date of the tweet
+  const getDateOfTweet = (tweetDate) => {
+    let dateDiff = new Date() - new Date(tweetDate);
+    let seconds = Math.floor(dateDiff / 1000);
+    let minutes = Math.floor(seconds / 60);
+    let hours = Math.floor(minutes / 60);
+    let days = Math.floor(hours / 24);
+
+    if (days >= 1) {
+      return days == 1 ? days + " day ago" : days + " days ago";
+    } else if (hours >= 1) {
+      return hours == 1 ? hours + " hour ago" : hours + " hours ago";
+    } else if (minutes >= 1) {
+      return minutes == 1 ? minutes + " minute ago" : minutes + " minutes ago";
+    } else {
+      return seconds == 1 ? seconds + " second ago" : seconds + " seconds ago";
+    }
+  };
   return (
     <div className="container mx-auto">
       <table class="table w-3/4 mt-10 mx-auto border-collapse">
@@ -96,20 +116,29 @@ function AllTweets() {
                       <div className="col-span-2">
                         <div class="avatar">
                           <div class="w-24 rounded-full">
-                            <img src="https://picsum.photos/200/300" />
+                            <img src={tweet.avatarUrl} />
                           </div>
                         </div>
                       </div>
                       <div className="col-span-8">
                         <span className="float-right block">
-                          {Math.ceil(
-                            (new Date() - new Date(tweet.createdAt)) /
-                              (1000 * 60 * 60 * 24)
-                          ) + " days ago"}
+                          {getDateOfTweet(tweet.createdAt)}
                         </span>
-                        <h1 className="font-bold">@{tweet.handle}</h1>
+                        <h1 className="font-bold inline mr-5">
+                          @{tweet.handle}
+                        </h1>
+                        <span id={tweet.id + "likeValue"}>
+                          <button
+                            class="material-icons mr-2 text-sm"
+                            onClick={() => onLikeHandler(tweet.id)}
+                            id={tweet.id + "like"}
+                          >
+                            thumb_up
+                          </button>
+                          {tweet.likesOnTweet}
+                        </span>
                         <textarea
-                          class="textarea w-full resize-none mt-2"
+                          class="textarea w-full resize-none mt-2 block"
                           value={tweet.message}
                           disabled
                         ></textarea>
@@ -128,22 +157,31 @@ function AllTweets() {
                                     <div className="col-span-2">
                                       <div class="avatar">
                                         <div class="w-24 rounded-full">
-                                          <img src="https://picsum.photos/200/300" />
+                                          <img src={reply.avatarUrl} />
                                         </div>
                                       </div>
                                     </div>
                                     <div className="col-span-8">
                                       <span className="float-right block">
-                                        {Math.ceil(
-                                          (new Date() -
-                                            new Date(reply.createdAt)) /
-                                            (1000 * 60 * 60 * 24)
-                                        ) + " days ago"}
+                                        {getDateOfTweet(reply.createdAt)}
                                       </span>
-                                      <h1>@{reply.handle}</h1>
-
+                                      <h1 className="inline mr-5">
+                                        @{reply.handle}
+                                      </h1>
+                                      <span id={reply.id + "likeValue"}>
+                                        <button
+                                          class="material-icons mr-2 text-sm"
+                                          onClick={() =>
+                                            onLikeHandler(reply.id)
+                                          }
+                                          id={reply.id + "like"}
+                                        >
+                                          thumb_up
+                                        </button>
+                                        {reply.likesOnTweet}
+                                      </span>
                                       <textarea
-                                        class="textarea w-full resize-none mt-2"
+                                        class="textarea w-full resize-none mt-2 block"
                                         value={reply.message}
                                         disabled
                                       ></textarea>
@@ -151,6 +189,13 @@ function AllTweets() {
                                   </div>
                                 );
                               })}
+                            {tweet.replies == null && (
+                              <div>
+                                <h1 className="text-thin text-center text-1xl">
+                                  No replies yet. Be the first one
+                                </h1>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div id={tweet.id + "replyBox"} className="hidden">

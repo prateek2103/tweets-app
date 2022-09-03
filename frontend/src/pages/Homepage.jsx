@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
-import TweetsByUsername from "./TweetsByUsername";
-import axios from "axios";
+import TweetsByUsername from "../components/TweetsByUsername";
+import { changePassword, postTweet } from "../context/tweetsAction";
 function Homepage() {
   const [tweet, setTweet] = useState("");
   const [showForgetForm, setShowForgetForm] = useState(false);
@@ -10,31 +10,25 @@ function Homepage() {
     confirmPassword: "",
   });
 
-  const config = {
-    headers: {
-      Authorization: localStorage.getItem("token"),
-    },
+  //method to validate tweet
+  const validateTweet = (tweet) => {
+    let isValid = true;
+    let errorMessage = "";
+    if (tweet.length > 144) {
+      isValid = false;
+      errorMessage = "tweet length cannot be more than 144 characters";
+    } else if (tweet.length == 0) {
+      isValid = false;
+      errorMessage = "tweet cannot be empty";
+    }
+
+    return { isValid, errorMessage };
   };
 
-  const onChangeHandler = (e) => {
-    setTweet(e.target.value);
-  };
-
-  const onPassChangeHandler = (e) => {
-    setPass({ ...pass, [e.target.name]: e.target.value });
-  };
-
+  //forgot password handler
   const onForgetSubmitHandler = () => {
-    config.headers["Content-Type"] = "text/plain";
     if (pass.password === pass.confirmPassword) {
-      axios
-        .post(
-          "http://localhost:8080/" +
-            localStorage.getItem("username") +
-            "/forgetPassword",
-          pass.password,
-          config
-        )
+      changePassword(pass.password)
         .then((res) => {
           toast.success("password changed successfully.");
           toast.success("login with your new password next time");
@@ -49,32 +43,39 @@ function Homepage() {
       toast.error("password and confirm password do not match");
     }
   };
+
+  //new tweet post handler
   const onSubmitHandler = () => {
-    if (tweet.length > 144) {
-      toast.error("tweet length cannot be more than 144 characters");
-    } else if (tweet.length == 0) {
-      toast.error("tweet cannot be empty");
-    } else {
-      //create a pull request
+    let { isValid, errorMessage } = validateTweet(tweet);
+
+    if (isValid) {
       let reqBody = {
-        handle: localStorage.getItem("username"),
-        createdAt: new Date(),
-        message: tweet,
+        tweetMessage: tweet,
       };
 
-      axios
-        .post(
-          "http://localhost:8080/tweets/" +
-            localStorage.getItem("username") +
-            "/add",
-          reqBody,
-          config
-        )
+      //http request
+      postTweet(reqBody)
         .then((res) => {
           toast.success("tweet posted successfully");
+        })
+        .catch((err) => {
+          toast.error("Server error. Please try again later");
+        })
+        .finally(() => {
           setTweet("");
         });
+    } else {
+      toast.error(errorMessage);
     }
+  };
+
+  //state handlers
+  const onChangeHandler = (e) => {
+    setTweet(e.target.value);
+  };
+
+  const onPassChangeHandler = (e) => {
+    setPass({ ...pass, [e.target.name]: e.target.value });
   };
 
   return (
@@ -83,9 +84,7 @@ function Homepage() {
         <div className="col-span-4 mt-[10%] px-5 text-center">
           <div class="avatar online placeholder">
             <div class="bg-ghost-focus text-black-content border-2 border-black rounded-full w-[250px]">
-              <span class="text-2xl">
-                {localStorage.getItem("username").charAt(0).toUpperCase()}
-              </span>
+              <img src={localStorage.getItem("avatarUrl")}></img>
             </div>
           </div>
           {!showForgetForm && (
@@ -159,7 +158,7 @@ function Homepage() {
           </div>
 
           <div className="mt-[100px]">
-            <h1 className="font-thin text-5xl">My tweets</h1>
+            <h1 className="font-thin text-5xl">My tweets and replies</h1>
             <TweetsByUsername
               username={localStorage.getItem("username")}
             ></TweetsByUsername>

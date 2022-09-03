@@ -1,58 +1,18 @@
-import axios from "axios";
 import React, { useRef } from "react";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { registerUser } from "../context/tweetsAction";
+import AWS from "aws-sdk";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+window.Buffer = window.Buffer || require("buffer").Buffer;
+
 function Signup() {
-  const onSubmitHandler = (e) => {
-    e.preventDefault();
-    let flag = true;
-    let errorMessage;
-    //confirm password and password should match
-    if (formState.confirmPassword !== formState.password) {
-      flag = false;
-      errorMessage = "confirm password and password do not match";
-    }
-
-    //contact number should be less than
-    if ((formState.phone + "").length != 10) {
-      flag = false;
-      errorMessage = "contact no. should have 10 digits";
-    }
-
-    if (!flag) {
-      toast.error(errorMessage, {
-        position: toast.POSITION.TOP_RIGHT,
-      });
-    } else {
-      //prepare request body
-      let reqBody = {
-        firstName: formState.firstname,
-        lastName: formState.lastname,
-        contactNumber: formState.phone,
-        username: formState.username,
-        password: formState.password,
-        email: formState.email,
-      };
-
-      axios
-        .post("http://localhost:8080/register", reqBody)
-        .then((res) => {
-          toast.success(res.data, {
-            position: toast.POSITION.TOP_RIGHT,
-          });
-          navigate("/login");
-        })
-        .catch((err) => {
-          toast.error(err.response.data.errorMessage, {
-            position: toast.POSITION.TOP_RIGHT,
-          });
-        });
-    }
-  };
-
+  const avatarRef = useRef();
   const formRef = useRef();
   const navigate = useNavigate();
+
   const [formState, setFormState] = useState({
     firstname: "",
     lastname: "",
@@ -63,6 +23,96 @@ function Signup() {
     confirmPassword: "",
   });
 
+  //AWS config
+  AWS.config.update({
+    accessKeyId: process.env.REACT_APP_ACCESS_KEY_ID,
+    secretAccessKey: process.env.REACT_APP_SECRET_ACCESS_KEY,
+  });
+
+  //aws s3 url
+  const s3Url =
+    "https://" +
+    process.env.REACT_APP_S3_BUCKET_NAME +
+    ".s3." +
+    process.env.REACT_APP_S3_REGION +
+    ".amazonaws.com/";
+
+  //validation of form details
+  const validateForm = () => {
+    let shouldSubmit = true;
+    let errorMessage = "";
+
+    //confirm password and password should match
+    if (formState.confirmPassword !== formState.password) {
+      shouldSubmit = false;
+      errorMessage = "confirm password and password do not match";
+    }
+
+    //contact number should be 10 digits
+    if ((formState.phone + "").length != 10) {
+      shouldSubmit = false;
+      errorMessage = "contact no. should have 10 digits";
+    }
+
+    return { shouldSubmit, errorMessage };
+  };
+
+  //method to submit form details
+  const onSubmitHandler = (e) => {
+    e.preventDefault();
+    let { shouldSubmit, errorMessage } = validateForm();
+
+    //if valid
+    if (shouldSubmit) {
+      //save the avatar in s3 bucket
+      let file = avatarRef.current.files[0];
+
+      //create the s3 bucket
+      const myBucket = new AWS.S3({
+        region: process.env.REACT_APP_S3_REGION,
+      });
+
+      //bucket params
+      const params = {
+        Body: file,
+        Bucket: process.env.REACT_APP_S3_BUCKET_NAME,
+        Key: file.name,
+      };
+
+      myBucket
+        .putObject(params)
+        .on("success", (data) => {
+          //prepare request body
+          let reqBody = {
+            firstName: formState.firstname,
+            lastName: formState.lastname,
+            contactNumber: formState.phone,
+            username: formState.username,
+            password: formState.password,
+            email: formState.email,
+            avatarUrl: s3Url + file.name,
+          };
+
+          //register the user
+          registerUser(reqBody)
+            .then((res) => {
+              toast.success(res.data);
+              navigate("/login");
+            })
+            .catch((err) => {
+              toast.error(err.response.data.errorMessage);
+            });
+        })
+        .send((err) => {
+          if (err) toast.error("Server error. Please try again later");
+        });
+    }
+
+    //incase of form errors
+    if (!shouldSubmit) toast.error(errorMessage);
+  };
+
+  //method to track changes in form data
   const onChangeHandler = (e) => {
     const { name, value } = e.target;
     setFormState({
@@ -73,7 +123,7 @@ function Signup() {
 
   return (
     <div>
-      <form className="px-10 py-[10%]" onSubmit={onSubmitHandler} ref={formRef}>
+      <form className="px-10 pt-[7%]" onSubmit={onSubmitHandler} ref={formRef}>
         <div className="flex flex-row justify-between mb-5">
           <div className="flex-1">
             <input
@@ -123,6 +173,22 @@ function Signup() {
           </div>
         </div>
 
+        <div>
+          <b>
+            <label className="label" for="file">
+              Upload avatar
+            </label>
+          </b>
+          <input
+            name="avatarUrl"
+            ref={avatarRef}
+            className="input mr-4 mb-4 p-2"
+            placeholder="avatar"
+            type="file"
+            accept="image/png, image/jpeg"
+          />
+        </div>
+
         <input
           name="username"
           value={formState.username}
@@ -156,6 +222,10 @@ function Signup() {
         <button className="btn w-4/12 mt-2 transition ease-linear hover:bg-tweeter-blue">
           Sign Up
         </button>
+
+        <Link to="/login" className="btn btn-primary w-3/12 ml-2 mt-2">
+          Back
+        </Link>
       </form>
     </div>
   );

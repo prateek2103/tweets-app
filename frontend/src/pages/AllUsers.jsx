@@ -3,23 +3,18 @@ import React, { useState } from "react";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
+import { getAllUsers, getUsersByUsername } from "../context/tweetsAction";
 function AllUsers() {
   let { username } = useParams();
-
-  const config = {
-    headers: {
-      Authorization: localStorage.getItem("token"),
-    },
-  };
 
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    //get all users
     if (username === "all") {
-      axios
-        .get("http://localhost:8080/users/all", config)
+      getAllUsers()
         .then((res) => {
           setUsers(res.data);
           setIsLoading(false);
@@ -30,14 +25,12 @@ function AllUsers() {
           toast.error("Please try again later");
         });
     } else {
-      axios
-        .get("http://localhost:8080/user/search/" + username, config)
+      getUsersByUsername(username)
         .then((res) => {
           setUsers(res.data);
           setIsLoading(false);
         })
         .catch((err) => {
-          console.log(err);
           navigate("/login");
           toast.error("Please try again later");
         });

@@ -2,56 +2,48 @@ import axios from "axios";
 import React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import {
+  deleteTweet,
+  editTweet,
+  getTweetsByUsername,
+} from "../context/tweetsAction";
 
 function TweetsByUsername({ username }) {
   const [tweets, setTweets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const config = {
-    headers: {
-      Authorization: localStorage.getItem("token"),
-    },
-  };
-
   useEffect(() => {
-    axios
-      .get("http://localhost:8080/tweets/" + username, config)
+    //get all the tweets by the user
+    getTweetsByUsername(username)
       .then((res) => {
         setTweets(res.data);
-      })
-      .then((res) => {
-        console.log(tweets);
         setIsLoading(false);
       })
-      .catch((error) => {
-        console.log(error);
+      .catch((err) => {
         setIsLoading(false);
       });
   }, []);
 
+  //delete tweet handler
   const onTweetDeleteHandler = (id) => {
-    axios
-      .delete(
-        "http://localhost:8080/tweets/" +
-          localStorage.getItem("username") +
-          "/delete/" +
-          id,
-        config
-      )
+    deleteTweet(id)
       .then((res) => {
         let filteredTweets = tweets.filter((tweet) => tweet.id != id);
         setTweets(filteredTweets);
-        toast.success("toast deleted successfully");
+        toast.success("tweet deleted successfully");
       })
       .catch((err) => {
         toast.error("Please try again later");
       });
   };
 
+  //edit tweet handler
   const onTweetEditHandler = (id) => {
     const textBox = document.getElementById(id);
     const submitButton = document.getElementById(id + "Edit");
+
+    //toggle box value to submit or edit based on actions
     if (isSubmitting === false) {
       submitButton.innerText = "submit";
       textBox.disabled = false;
@@ -63,15 +55,7 @@ function TweetsByUsername({ username }) {
       submitButton.innerText = "edit";
 
       //update the tweet
-      axios
-        .put(
-          "http://localhost:8080/tweets/" +
-            localStorage.getItem("username") +
-            "/update/" +
-            id,
-          { message: textBox.value },
-          config
-        )
+      editTweet(id, textBox.value)
         .then((res) => {
           toast.success("tweet updated successfully");
         })
@@ -79,6 +63,25 @@ function TweetsByUsername({ username }) {
           toast.error("Please try again later");
           textBox.value = oldValue;
         });
+    }
+  };
+
+  //method to retrieve date of the tweet
+  const getDateOfTweet = (tweetDate) => {
+    let dateDiff = new Date() - new Date(tweetDate);
+    let seconds = Math.floor(dateDiff / 1000);
+    let minutes = Math.floor(seconds / 60);
+    let hours = Math.floor(minutes / 60);
+    let days = Math.floor(hours / 24);
+
+    if (days >= 1) {
+      return days == 1 ? days + " day ago" : days + " days ago";
+    } else if (hours >= 1) {
+      return hours == 1 ? hours + " hour ago" : hours + " hours ago";
+    } else if (minutes >= 1) {
+      return minutes == 1 ? minutes + " minute ago" : minutes + " minutes ago";
+    } else {
+      return seconds == 1 ? seconds + " second ago" : seconds + " seconds ago";
     }
   };
 
@@ -96,16 +99,13 @@ function TweetsByUsername({ username }) {
                         <div className="col-span-2">
                           <div class="avatar">
                             <div class="w-24 rounded-full">
-                              <img src="https://picsum.photos/200/300" />
+                              <img src={tweet.avatarUrl} />
                             </div>
                           </div>
                         </div>
                         <div className="col-span-10">
                           <span className="float-right block">
-                            {Math.ceil(
-                              (new Date() - new Date(tweet.createdAt)) /
-                                (1000 * 60 * 60 * 24)
-                            ) + " days ago"}
+                            {getDateOfTweet(tweet.createdAt)}
                           </span>
                           <h1>@{tweet.handle}</h1>
 
